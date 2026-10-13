@@ -1,0 +1,4 @@
+interface:
+  display_name: "Memo_Card_Maker"
+  short_description: "先确认专业版，再按最新语法用 API 或 TXT 制作墨墨学习卡片"
+  default_prompt: "使用 $memo-card-maker 制作墨墨记忆卡，先询问学习者是否开通专业版，再核对最新文档并制作。"
