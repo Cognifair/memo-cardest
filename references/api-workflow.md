@@ -22,6 +22,24 @@
 
 发送前从实时官方定义核对方法、路径、路径/正文 ID 字段、required 字段、位置 order、语法版本和 MIME。文档中的创建和更新接口可能使用不同 ID 字段名，不能套用一份通用 payload。
 
+### 已实测的创建请求体陷阱（2026-10-14）
+
+当 URL 使用官方 GET 返回的 `mkjd_…` / `mkjch_…` ID 时，创建卡片采用路径寻址：
+
+```text
+POST /open/api/v1/markji/decks/{deck}/chapters/{chapter}/cards
+```
+
+已成功创建并 GET 回读四张真实选择题（包括题面图片与解析图片）的最小请求体为：
+
+```json
+{"card":{"content":"完整 Markji 语法文本","grammar_version":3}}
+```
+
+不要把 `deck` / `chapter` 再放入创建请求体。当天官方 `api_bundle.yaml` 仍把这两个字段列为 body required，但实测重复传入官方长 ID 会返回 HTTP 400 / `common_invalid_param`：`deck not a valid ObjectId`、`chapter not a valid ObjectId`；仅移除可选 `order` 并不能解决。遇到同一症状，先核对 URL 的真实目标和远端未新增，再在用户已授权的真实样卡上做一次“仅 card”的最小修复，并回读逐字符核对正文、版本与章节归属。此经验只适用于上述创建接口，不推断更新、移动或媒体接口也应删除其正文 ID 字段；`order` 的插入行为另行验证。
+
+这类 ObjectId 错误是参数/寻址诊断依据，不足以断言会员未开通、账号无写权限或整个官方 API 不可用；不要猜测内部 ObjectId 或自动改走 Web API。非法 `grammar_version=999` 返回语法错误只能说明到达相应校验，不能证明合法卡片必定保存，也不应未经证据承诺探针绝对无副作用。优先使用已授权的真实样卡并核查远端数量；写响应不确定先查询，禁止盲目重发。
+
 `card.content` 是完整 Markji 语法字符串。媒体卡按当前 tutuji 指南配套使用整数 `card.grammar_version: 3`，与 content 同级；每次核对最新版本要求。旧卡升级语法版本须用完整正文试验并回读，不仅修改媒体片段。
 
 图片、音频和遮罩先上传，再读取返回的完整、大小写敏感 `file.id`，回填已验证语法。不能截短、解密、替换成长短 ID 的猜测值。卡片引用用真实 `root_id`，不是路径中的 `card.id`；不要混用官方 ID、Web 内部 ID 和引用 ID。
