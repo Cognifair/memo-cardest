@@ -1,6 +1,10 @@
 # 可选支链清单
 
-本技能的核心功能独立可用；下列能力仅按任务需要调用。安装来源与远端版本源尚未核实，null 不表示已经上架或最新。版本检查与新支链发现分别授权、默认关闭。新支链源采用现有墨卡大师 Git origin 核实的 Cognifair 公开 GitHub 仓库；这不代表平台市场已上架。授权与执行步骤见 [satellite-framework.md](satellite-framework.md)。
+本技能的核心功能独立可用；下列能力仅按任务需要调用。
+
+**分发渠道是 GitHub 公开仓库**：每项的 `repository_url` 即安装来源，`install_source` 标记来源类型。`marketplace_listing` 恒为 `null`——本项目不走上架平台市场，因此不声称「市场上架」，也不承诺「从市场一键安装」。安装与更新的允许条件见 [satellite-framework.md](satellite-framework.md)。
+
+`version_url` 为 `null` 表示暂无可检查的版本源；未配置不等于已经是最新版。版本检查与新支链发现分别授权、默认关闭。
 
 ```json
 {
@@ -22,7 +26,8 @@
       "id": "memo-mineruocr",
       "name": "Memo-MinerUOCR",
       "capability": "先选择本地非 MinerU OCR 或官网云端，再对扫描材料与大 PDF 拆分识别、整理素材并合并 Markdown",
-      "install_source": "platform_marketplace",
+      "install_source": "github_public_repository",
+      "repository_url": "https://github.com/Cognifair/memo-mineruocr",
       "marketplace_listing": null,
       "version_url": null
     },
@@ -30,7 +35,8 @@
       "id": "memo-txtimporter",
       "name": "墨记文档导入 Memo-Txtimporter",
       "capability": "封装与校验 TXT 章节、分卡符和答案线",
-      "install_source": "platform_marketplace",
+      "install_source": "github_public_repository",
+      "repository_url": "https://github.com/Cognifair/memo-txtimporter",
       "marketplace_listing": null,
       "version_url": null
     },
@@ -38,11 +44,11 @@
       "id": "memo-table",
       "name": "墨记表格制作 Memo-Table",
       "capability": "制作表格图片或 LaTeX array 表格",
-      "install_source": "platform_marketplace",
+      "install_source": "github_public_repository",
+      "repository_url": "https://github.com/Cognifair/memo-table",
       "marketplace_listing": null,
       "version_url": null
     }
   ]
 }
 ```
-

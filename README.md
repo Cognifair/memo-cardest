@@ -18,9 +18,11 @@
 | 技能 | 职责 |
 |---|---|
 | **Memo-Cardest** | 核心内容：学什么、怎么问、答案解释及正文语法 |
-| Memo-MinerUOCR（可选，`$memo-mineruocr`） | 材料识别：首次选择本地非 MinerU OCR 或官网云端；大 PDF 拆分、识别并合并 Markdown 和图片 |
+| [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr)（可选，`$memo-mineruocr`） | 材料识别：首次选择本地非 MinerU OCR 或官网云端；大 PDF 拆分、识别并合并 Markdown 和图片 |
 | [Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | 文件容器：牌组信息、章节、分卡符与答案线 |
-| Memo-Table（可选） | 表格图片或 LaTeX array 表格 |
+| [Memo-Table](https://github.com/Cognifair/memo-table)（可选） | 表格图片或 LaTeX array 表格 |
+
+支链均以 **GitHub 公开仓库**分发（链接见上表），**不上架平台技能市场**。安装方式：自行下载，或在明确要求且来源已核实后由 agent 从对应仓库取回。框架本身不会自动下载或安装任何东西。
 
 TXT 容器格式不等于卡片正文语法；本技能不把二者混为一谈。旧称 Memo_Card_Maker 仅用于识别自然语言意图，不是另一个显式调用名。
 
