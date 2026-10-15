@@ -1,4 +1,4 @@
 interface:
-  display_name: "Memo_Card_Maker"
-  short_description: "先确认专业版，再按最新语法用 API 或 TXT 制作墨墨学习卡片"
-  default_prompt: "使用 $memo-card-maker 制作墨墨记忆卡，先询问学习者是否开通专业版，再核对最新文档并制作。"
+  display_name: "墨卡大师 Memo-Cardest v1.1.0"
+  short_description: "核心制卡：拆解知识、设计题型并核对正文语法，支持 API 或 TXT 交付"
+  default_prompt: "使用 $memo-cardest（墨卡大师）制作墨墨记忆卡，先确认专业版，再核对最新正文语法；走 TXT 路径时结合 memo-txtimporter 封装文档。"

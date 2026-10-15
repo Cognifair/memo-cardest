@@ -1,18 +1,29 @@
 ---
-name: memo-card-maker
-description: 为墨墨记忆卡（Markji）制作、改写和排版学习卡片。先询问学习者是否开通专业版；专业版走官方 OpenAPI，未开通则交付带语法的 TXT 供自行导入。用户说 Memo_Card_Maker、墨墨制卡、墨记制卡或要求把学习材料转换为 Markji 卡片时使用；不用于墨墨背单词词库管理。
+name: memo-cardest
+description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能，负责知识拆解、题型、正文语法和学习排版。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡时使用。先确认专业版，再按官方 OpenAPI 或 TXT 路径交付；TXT 文件容器交由 memo-txtimporter，表格渲染交由 memo-table。不用于墨墨背单词词库管理；仅整理已有 TXT 文件结构时使用 memo-txtimporter。
+metadata:
+  version: "1.1.0"
 ---
 
-# Memo_Card_Maker
+# 墨卡大师 Memo-Cardest v1.1.0
 
-把学习材料变成可主动回忆、易读且符合当前 Markji 语法的卡片。内部调用名为 `$memo-card-maker`，界面名称为 `Memo_Card_Maker`。
+## 可选支链与更新框架
+
+业务执行时读取 [references/satellite-framework.md](references/satellite-framework.md)，按 [references/satellites.md](references/satellites.md) 核实可选能力与任务结束时的提醒。核心业务不依赖支链；缺失能力只说明实际限制，不伪称已调用。安装、维护或测试技能不触发推荐和授权询问。
+
+更新检查默认关闭；只有用户明确同意才读取版本清单，自动场景按目标间隔至少 24 小时。未配置版本源不等于已经是最新版。框架不会安装代码、发布 GitHub 或创建自动化；这些动作必须另有明确请求。
+
+
+把学习材料变成可主动回忆、易读且符合当前 Markji 语法的卡片。调用名为 `$memo-cardest`，展示名为「墨卡大师 Memo-Cardest」，当前版本见 frontmatter 的 `metadata.version`；旧称 `Memo_Card_Maker` 仅用于识别自然语言意图，不保留旧调用入口。
+
+这是核心制卡技能：负责学什么、怎样提问、答案与解释以及正文语法；「墨记文档导入 Memo-Txtimporter」（`$memo-txtimporter`）只负责将正文组织为带章节、分卡符和答案线的 TXT 文件；「墨记表格制作 Memo-Table」（`$memo-table`）负责表格渲染。TXT 支链缺失时可依本地 txt-workflow 参考封装，但不能声称运行了专用校验；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。技能不可用时说明限制，不伪称已调用。
 
 ## 第一关：询问专业版状态
 
 每个新的制卡任务开始时，先问：**“学习者的墨墨记忆卡账户已开通专业版，还是未开通？”** 等待明确回答后，才生成卡片、选定交付路径或发起账户 API 请求。如果本任务用户已明确提供状态，不必重复询问。不要从已有密钥、历史连接成功、牌组数量或旧任务推断会员状态。
 
 - **已开通**：使用官方 OpenAPI 路径，阅读 [references/api-workflow.md](references/api-workflow.md)。没有凭证或接口权限时说明限制并请用户提供安全凭证或选择 TXT；不要自动改走逆向 Web API。
-- **未开通**：使用带 Markji 语法的 UTF-8 TXT，阅读 [references/txt-workflow.md](references/txt-workflow.md)。交付后让学习者自行导入；不索要密钥、不调用账户 API、不替用户操作导入。
+- **未开通**：使用带 Markji 语法的 UTF-8 TXT，阅读 [references/txt-workflow.md](references/txt-workflow.md)，并在可用时读取 `memo-txtimporter/SKILL.md`，按其文件格式封装和校验。交付后让学习者自行导入；不索要密钥、不调用账户 API、不替用户操作导入。
 - 只审查语法或解释设计、而不制作卡片的请求，不需要会员询问。
 
 随后从用户材料确定学习目标、要记什么、题型、牌组/章节与新建或修改范围。只补问会影响成品的缺失信息。未指定视觉风格时采用工具箱的克制绿色风格；指定仿照某张卡时，先读取真实源码或请用户提供，不凭标题猜样式。
@@ -40,7 +51,7 @@ description: 为墨墨记忆卡（Markji）制作、改写和排版学习卡片�
 - 避免全篇粗体、彩虹配色、长空格拉线；保留手机宽度的可读性。亮暗模式需要实际预览，透明背景不等于文字在两种模式必然可读。
 - 图片、音频、遮罩、卡片引用只能用真实、获授权的对象。不可复用工具箱的固定 ID 或把本地路径、文件名、URL 伪装成 ID。
 
-需要表格时读 [references/tables.md](references/tables.md)，使用当前可用的 `maimemo-table` 技能生成透明 PNG 和可编辑 HTML，或按最新指南采用经验证的简短公式表格。HTML 只作为本地编辑源，不能直接写进 Markji 正文。
+需要表格时读 [references/tables.md](references/tables.md)，使用当前可用的 `memo-table` 技能生成透明 PNG 和可编辑 HTML，或按最新指南采用经验证的简短公式表格。HTML 只作为本地编辑源，不能直接写进 Markji 正文。
 
 ## 发布与验收
 
