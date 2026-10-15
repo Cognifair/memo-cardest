@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local satellite inventory, consent state and HTTPS version checks; never installs."""
+"""Local inventory, version checks and public Memo discovery; never installs."""
 import argparse
 from contextlib import contextmanager
 from functools import total_ordering
@@ -96,7 +96,20 @@ def config(root):
             raise ValueError("Missing satellite description")
         if item.get("version_url") is not None:
             validate_url(item["version_url"], hosts)
+    discovery = cfg.get("new_skill_discovery")
+    if discovery is not None:
+        validate_discovery(discovery)
     return cfg
+
+
+def validate_discovery(source):
+    if (not isinstance(source, dict) or source.get("provider") != "github_public"
+            or not isinstance(source.get("owner"), str)
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}", source["owner"])
+            or source.get("repo_prefix") != "memo-" or source.get("auto_check") is not False
+            or type(source.get("max_pages")) is not int or not 1 <= source["max_pages"] <= 5
+            or type(source.get("max_candidates")) is not int or not 1 <= source["max_candidates"] <= 20):
+        raise ValueError("Invalid public Memo discovery source or request budget")
 
 
 def validate_url(url, allowed_hosts):
@@ -148,7 +161,9 @@ def fetch_manifest(item, allowed_hosts):
 def default_state():
     return {"schema": 1, "auto_check": False, "pitched": False, "asked_update": False,
             "declined": False, "first_task": None, "pitch_task": None,
-            "last_checks": {}, "missing_notices": {}}
+            "last_checks": {}, "missing_notices": {}, "auto_discover": False,
+            "asked_discovery": False, "discovery_candidates": {}, "discovery_notices": [],
+            "discovery_dismissed": []}
 
 
 def read_state(path):
@@ -161,10 +176,15 @@ def read_state(path):
         raise ValueError("Invalid local state; no consent is inferred")
     result = default_state()
     result.update(data)
-    if any(type(result[key]) is not bool for key in ("auto_check", "pitched", "asked_update", "declined")):
+    if any(type(result[key]) is not bool for key in ("auto_check", "pitched", "asked_update", "declined",
+                                                   "auto_discover", "asked_discovery")):
         raise ValueError("Invalid consent state")
     if not isinstance(result["last_checks"], dict) or not isinstance(result["missing_notices"], dict):
         raise ValueError("Invalid local state maps")
+    if (not isinstance(result["discovery_candidates"], dict)
+            or any(not isinstance(result[key], list) or any(not isinstance(item, str) for item in result[key])
+                   for key in ("discovery_notices", "discovery_dismissed"))):
+        raise ValueError("Invalid discovery state")
     return result
 
 
@@ -241,13 +261,13 @@ def complete_task(state, rows, task_id):
     missing = [row for row in rows if not row["installed"]]
     installed = [row for row in rows if row["installed"]]
     if state["declined"]:
-        return "none"
+        return "check_updates" if state["auto_discover"] else "none"
     if rows and not installed and missing and not state["pitched"]:
         return "pitch"
     prior_task = state["pitch_task"] or state["first_task"]
     if installed and not state["asked_update"] and task_id != prior_task:
         return "ask_update_consent"
-    if state["auto_check"]:
+    if state["auto_check"] or state["auto_discover"]:
         return "check_updates"
     return "none"
 
@@ -298,6 +318,140 @@ def check_versions(cfg, rows, state, manual=False, now=None, fetcher=None):
     return report
 
 
+def fetch_public(url, max_bytes, content_type):
+    """Read only fixed GitHub public endpoints, without tokens, cookies or redirects."""
+    parsed = urllib.parse.urlsplit(url)
+    if (parsed.scheme != "https" or parsed.hostname not in {"api.github.com", "raw.githubusercontent.com"}
+            or parsed.username or parsed.password or parsed.fragment or parsed.port not in (None, 443)):
+        raise ValueError("Unverified discovery endpoint")
+    addresses = socket.getaddrinfo(parsed.hostname, 443, type=socket.SOCK_STREAM)
+    if not addresses or any(not ipaddress.ip_address(row[4][0]).is_global for row in addresses):
+        raise ValueError("Discovery endpoint must resolve to public addresses")
+    req = urllib.request.Request(url, headers={"Accept": content_type, "User-Agent": "memo-cardest-discovery/1.0"})
+    with urllib.request.build_opener(NoRedirect()).open(req, timeout=6) as response:
+        if response.status != 200:
+            raise ValueError("Discovery endpoint unavailable")
+        content = response.read(max_bytes + 1)
+    if len(content) > max_bytes:
+        raise ValueError("Discovery response is too large")
+    return content.decode("utf-8-sig")
+
+
+def github_page(owner, page):
+    url = f"https://api.github.com/users/{owner}/repos?per_page=100&page={page}"
+    data = json.loads(fetch_public(url, 2_000_000, "application/json"))
+    if not isinstance(data, list) or len(data) > 100 or any(not isinstance(row, dict) for row in data):
+        raise ValueError("Invalid public repository listing")
+    return data
+
+
+def github_skill(owner, name, branch):
+    url = f"https://raw.githubusercontent.com/{owner}/{name}/{urllib.parse.quote(branch, safe='')}/SKILL.md"
+    return fetch_public(url, 262144, "text/plain")
+
+
+def public_skill_metadata(text, expected_id):
+    match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|$)", text, re.S)
+    if not match:
+        raise ValueError("Missing public skill frontmatter")
+    header = match[1]
+    name = re.search(r"(?m)^name:[ \t]*['\"]?([a-z0-9-]+)['\"]?[ \t]*\r?$", header)
+    description = re.search(r"(?m)^description:[ \t]*(\S[^\r\n]*)", header)
+    version = re.search(r"(?m)^  version:[ \t]*['\"]?([^'\"\s]+)['\"]?[ \t]*\r?$", header)
+    if not name or name[1] != expected_id or not description or description[1] in {"|", ">"}:
+        raise ValueError("Repository is not a verified skill with an inline description")
+    if version:
+        Version(version[1])
+    # Content is untrusted metadata, never instructions. Bound and normalize display text.
+    summary = " ".join(description[1].strip("'\"").split())[:800]
+    return summary, version[1] if version else None
+
+
+def check_new_skills(cfg, roots, state, manual=False, now=None, lister=None, reader=None):
+    report = {"status": "disabled", "new_skills": [], "unannounced": [], "checked": [], "failed": [],
+              "coverage": "public_github_only", "marketplace_checked": False, "truncated": False,
+              "catalog_pages_checked": 0, "repositories_seen": 0}
+    if not manual and not state["auto_discover"]:
+        return report
+    source = cfg.get("new_skill_discovery")
+    if source is None:
+        report["status"] = "not_configured"
+        return report
+    validate_discovery(source)
+    owner = source["owner"]
+    report["source"] = f"https://github.com/{owner}"
+    now = time.time() if now is None else now
+    key = f"discovery|github_public|{owner.lower()}"
+    last = state["last_checks"].get(key)
+    if last is not None and not manual and now - last < cfg["throttle_hours"] * 3600:
+        report["status"] = "throttled"
+        return report
+    state["last_checks"][key] = now
+    known = {cfg["skill_id"], *(row["id"] for row in cfg["satellites"])}
+    # Exclude all actually installed Memo skills, not just the static satellite list.
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in root.iterdir():
+            if path.name.startswith("memo-") and not path.is_symlink() and (path / "SKILL.md").is_file():
+                try:
+                    sid, _ = skill_metadata(path / "SKILL.md")
+                    if sid == path.name:
+                        known.add(sid)
+                except (OSError, ValueError):
+                    continue
+    lister, reader = lister or github_page, reader or github_skill
+    attempts, seen = 0, set()
+    for page in range(1, source["max_pages"] + 1):
+        try:
+            repos = lister(owner, page)
+            if not isinstance(repos, list) or len(repos) > 100 or any(not isinstance(repo, dict) for repo in repos):
+                raise ValueError("Invalid public listing")
+        except Exception:
+            report["failed"].append({"stage": "public_catalog", "reason": "listing_failed"})
+            break
+        report["catalog_pages_checked"] += 1
+        report["repositories_seen"] += len(repos)
+        for repo in repos:
+            sid = repo.get("name", "")
+            if (not isinstance(sid, str) or not ID.fullmatch(sid) or not sid.startswith(source["repo_prefix"])
+                    or sid in known or sid in seen or repo.get("private") is not False
+                    or repo.get("fork") or repo.get("archived") or repo.get("disabled")
+                    or str(repo.get("full_name", "")).lower() != (owner + "/" + sid).lower()):
+                continue
+            seen.add(sid)
+            if attempts >= source["max_candidates"]:
+                report["truncated"] = True
+                break
+            attempts += 1
+            branch = repo.get("default_branch")
+            try:
+                if not isinstance(branch, str) or not branch or len(branch) > 255:
+                    raise ValueError("Missing default branch")
+                summary, version = public_skill_metadata(reader(owner, sid, branch), sid)
+            except Exception:
+                report["failed"].append({"id": sid, "stage": "skill_verification", "reason": "skill_unverified"})
+                continue
+            url = f"https://github.com/{owner}/{sid}"
+            candidate = {"id": sid, "name": sid, "capability": summary, "version": version,
+                         "source": url, "publication": "public_github_repository",
+                         "marketplace_status": "unverified", "compatibility": "candidate_unreviewed"}
+            report["checked"].append(sid)
+            report["new_skills"].append(candidate)
+            state["discovery_candidates"][sid] = {"source": url, "version": version}
+            if url not in state["discovery_notices"] and url not in state["discovery_dismissed"]:
+                report["unannounced"].append(candidate)
+        if report["truncated"] or len(repos) < 100:
+            break
+        if page == source["max_pages"]:
+            report["truncated"] = True
+    if report["failed"] or report["truncated"]:
+        report["status"] = "partial" if report["checked"] or report["truncated"] else "failed"
+    else:
+        report["status"] = "new_skills_available" if report["new_skills"] else "no_new_skills"
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skill-root", type=Path, default=Path(__file__).resolve().parent.parent)
@@ -309,16 +463,22 @@ def main():
     completion = sub.add_parser("complete")
     completion.add_argument("--task-id", required=True)
     record = sub.add_parser("record")
-    record.add_argument("event", choices=["pitch", "declined", "update-asked"])
+    record.add_argument("event", choices=["pitch", "declined", "update-asked", "discovery-asked",
+                                          "discovery-notified", "discovery-dismissed"])
     record.add_argument("--task-id", required=True)
+    record.add_argument("--id")
     consent = sub.add_parser("consent")
     consent.add_argument("choice", choices=["once", "auto", "off"])
+    consent.add_argument("--scope", choices=["updates", "discovery", "both"], default="updates")
     missing = sub.add_parser("missing")
     missing.add_argument("--id", required=True)
     missing.add_argument("--session-id", required=True)
     checking = sub.add_parser("check")
     checking.add_argument("--manual", action="store_true",
                           help="Only for an explicit one-time user request; bypasses auto-check and throttle")
+    checking.add_argument("--include-new", action="store_true", help="Explicitly include discovery of new public Memo skills")
+    discovering = sub.add_parser("discover")
+    discovering.add_argument("--manual", action="store_true")
     args = parser.parse_args()
     try:
         cfg = config(args.skill_root)
@@ -336,17 +496,35 @@ def main():
                 if args.action == "complete":
                     action = complete_task(state, rows, args.task_id)
                     output = {"next_action": action, "satellites": rows}
+                    output["next_discovery_action"] = (
+                        "ask_discovery_consent" if cfg.get("new_skill_discovery") and state["asked_update"]
+                        and not state["asked_discovery"] and not state["declined"]
+                        and args.task_id != (state["pitch_task"] or state["first_task"]) else "none")
                 elif args.action == "record":
                     if args.event == "pitch":
                         state.update(pitched=True, pitch_task=args.task_id)
                     elif args.event == "declined":
-                        state.update(declined=True, pitched=True, auto_check=False, asked_update=True)
-                    else:
+                        state.update(declined=True, pitched=True, auto_check=False, auto_discover=False,
+                                     asked_update=True, asked_discovery=True)
+                    elif args.event == "update-asked":
                         state["asked_update"] = True
+                    elif args.event == "discovery-asked":
+                        state["asked_discovery"] = True
+                    else:
+                        candidate = state["discovery_candidates"].get(args.id)
+                        if candidate is None:
+                            raise ValueError("Only a verified discovery candidate can be recorded")
+                        key = "discovery_notices" if args.event == "discovery-notified" else "discovery_dismissed"
+                        if candidate["source"] not in state[key]:
+                            state[key].append(candidate["source"])
                     output = {"recorded": args.event}
                 elif args.action == "consent":
-                    state.update(asked_update=True, auto_check=args.choice == "auto", declined=False)
+                    if args.scope in ("updates", "both"):
+                        state.update(asked_update=True, auto_check=args.choice == "auto", declined=False)
+                    if args.scope in ("discovery", "both"):
+                        state.update(asked_discovery=True, auto_discover=args.choice == "auto")
                     output = {"auto_check": state["auto_check"],
+                              "auto_discover": state["auto_discover"], "scope": args.scope,
                               "check_once_next": args.choice in ("once", "auto")}
                 elif args.action == "missing":
                     target = next((row for row in rows if row["id"] == args.id), None)
@@ -357,8 +535,12 @@ def main():
                     if notify:
                         seen.append(args.id)
                     output = {"should_notify": notify, "satellite": target}
+                elif args.action == "discover":
+                    output = check_new_skills(cfg, roots, state, args.manual)
                 else:
                     output = check_versions(cfg, rows, state, args.manual)
+                    if args.include_new or state["auto_discover"]:
+                        output["discovery"] = check_new_skills(cfg, roots, state, args.manual and args.include_new)
                 save_state(state_path, state)
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0

@@ -1,4 +1,4 @@
 interface:
-  display_name: "墨卡大师 Memo-Cardest v1.1.0"
-  short_description: "核心制卡：拆解知识、设计题型并核对正文语法，支持 API 或 TXT 交付"
-  default_prompt: "使用 $memo-cardest（墨卡大师）制作墨墨记忆卡，先确认专业版，再核对最新正文语法；走 TXT 路径时结合 memo-txtimporter 封装文档。"
+  display_name: "墨卡大师 Memo-Cardest v1.1.1"
+  short_description: "核心制卡与 OCR 支链协作，获同意后同时检查技能更新和新发布的 Memo 支链"
+  default_prompt: "使用 $memo-cardest（墨卡大师）制作墨墨记忆卡，先确认专业版并核对最新语法；按需调用 OCR/TXT 支链，交付后按授权检查已有支链更新及新发布的 Memo 候选技能。"
