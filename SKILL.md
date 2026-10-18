@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能：知识拆解、题型、卡片正文、改卡与牌组操作。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡，或要求连接墨墨 API、改牌组里的卡片时使用。开工先做启动同步（首次问三档），再确认专业版；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.3"
+  version: "1.3.4"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.3
+# 墨卡大师 Memo-Cardest v1.3.4
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -33,13 +33,22 @@ metadata:
 - 同步只覆盖清单里的三个支链：只走各自已核实的 `repository_url`，只做 fast-forward；工作区不干净、远端不符、不是 git 仓库的一律跳过。**主技能不自动覆盖自己**，发现新版本只报告，等用户明确要求再更新。
 - 业务任务必须继续：同步失败或跳过不影响制卡，但报告里要写清楚。
 
-## G0 会员状态（有凭证即视为已开通，否则才问）
+## G0 会员状态与凭证（有 key 即视为已开通）
 
-- 用户提供了墨墨 API key，或要求用他的凭证接入官方 API → **视为已开通专业版**，直接走 API 路径，不再询问。
+- 先看用户环境变量 `MAIMEMO_TOKEN`（`$env:MAIMEMO_TOKEN` 或 `os.environ.get`）：存在就直接用，视为已开通专业版，不再索要 key、不再问设置；只看是否存在，不打印值。
+- 用户本次提供了墨墨 API key，或要求用他的凭证接入官方 API → 视为已开通专业版，直接走 API 路径。
 - 用户原话出现「未开通」→ TXT 路径。
-- 两者都没有 → 问一句「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等明确回答再继续。
+- 两者都没有且环境变量也没有 → 问一句「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等明确回答再继续。
 - 历史连接成功、牌组数量、旧任务记录都不能单独作为依据。答复里留一行：`member: pro（用户提供 API key）` 或 `member: free（用户原话）`。
-- 已开通 → 官方 OpenAPI，读 [references/api-workflow.md](references/api-workflow.md)。没有凭证或权限被拒 → 说明限制，请用户提供安全凭证或改走 TXT；不得自动改走逆向 Web API。
+- **拿到 key 后，用问题框问一次是否存成用户环境变量**（仅当 key 来自本次输入且 `MAIMEMO_TOKEN` 还没设置）：
+  「要把这个 key 设为用户环境变量 `MAIMEMO_TOKEN` 吗？以后就不用每次粘贴。」
+  ① 设置到用户环境变量（仅本机、当前 Windows 用户生效）
+  ② 不用，仅本次使用
+  - 选①：执行 `setx MAIMEMO_TOKEN "<key>"`，**不要回显 key**；成功只报 `token_env: set`，失败说明原因并继续用本次的 key。`setx` 只影响新进程，本次会话仍用当前 key，下次启动生效。
+  - 选②：只在本次使用，不落盘，报 `token_env: session_only`。
+  - 若当前环境会记录命令历史，提醒用户可以自己在终端执行同一条命令；提问同样必须用问题框。
+  - 无论选哪个，**不得把 key 写进技能文件、状态文件、日志、Git 或示例**。
+- 已开通 → 官方 OpenAPI，读 [references/api-workflow.md](references/api-workflow.md)。请求时优先从环境变量取 key，其次用本次提供的 key。没有凭证或权限被拒 → 说明限制，请用户提供安全凭证或改走 TXT；不得自动改走逆向 Web API。
 - 未开通 → TXT 路线，读 [references/txt-workflow.md](references/txt-workflow.md)，并按需读 `memo-txtimporter/SKILL.md`；不索要密钥、不调账户 API、不替用户操作导入。
 - 没有依据且未回答 → 停在这里：不生成卡片、不选路径、不发请求。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
