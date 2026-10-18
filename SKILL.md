@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能，负责知识拆解、题型、正文语法和学习排版。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡时使用。先确认专业版，再按官方 OpenAPI 或 TXT 路径交付；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
 ---
 
-# 墨卡大师 Memo-Cardest v1.2.0
+# 墨卡大师 Memo-Cardest v1.2.1
 
 ## 可选支链与更新框架
 
