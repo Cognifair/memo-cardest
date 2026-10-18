@@ -1,11 +1,13 @@
 ---
 name: memo-cardest
-description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能，负责知识拆解、题型、正文语法和学习排版。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡时使用。先确认专业版，再按官方 OpenAPI 或 TXT 路径交付；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
+description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能：知识拆解、题型、卡片正文、改卡与牌组操作。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡，或要求连接墨墨 API、改牌组里的卡片时使用。开工先做启动同步（首次问三档），再确认专业版；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.2"
+  version: "1.3.3"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.2
+# 墨卡大师 Memo-Cardest v1.3.3
+
+**适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
 把学习材料变成可主动回忆、可判分、符合当前 Markji 语法的卡片。调用名 `$memo-cardest`，展示名「墨卡大师 Memo-Cardest」，旧称 `Memo_Card_Maker` 只用于识别意图，不保留旧入口。
 
@@ -19,6 +21,9 @@ metadata:
   - **提问必须用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）发起，三个选项可点选；不得只在正文写一句问题就结束回合，更不得直接终止对话。
   - 用户没选就不推进：不生成卡片、不调用 API、不继续任何后续步骤。
   - 环境确实没有提问控件时，才退回文字提问，并明确写「等你选择后继续」。
+  - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API，不能因为“只是改一张卡”跳过。
+  - 脚本跑不了（没装 Python、路径不对、权限不足）：**仍要先问同步授权**，不得以“工具不可用”为由跳过提问。
+  - **已经动手才发现漏了 S0**：立刻停下，说明漏了一步，补跑 `sync` 并按结果询问，然后继续；不得隐瞒或假装做过。
 - **每次任务**：先跑 `python scripts/check_updates.py sync`。
   - 返回 `needs_consent` → 就是首次使用，问上面那一问，不得跳过。
   - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。

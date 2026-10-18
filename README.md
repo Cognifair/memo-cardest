@@ -49,6 +49,8 @@ git clone https://github.com/Cognifair/memo-txtimporter.git
 
 克隆后用 `inventory` 确认每项都有 `.git`；`--depth 1` 的浅克隆不推荐，`pull` 偶尔需要完整历史。
 
+**克隆或升级后要重启客户端**：Codex / WorkBuddy 只在启动时扫描技能目录，运行中的会话不会重新加载（DSH 会热更新目录，所以那边能即时看到）。
+
 TXT 容器格式不等于卡片正文语法；本技能不把二者混为一谈。旧称 Memo_Card_Maker 仅用于识别自然语言意图，不是另一个显式调用名。
 
 OCR 支链独立使用不要求 Markji 专业版，也不会自动制卡或上传到 Markji。选择 MinerUOCR 云端后，支链会引导使用者在官网注册、进入 API 管理创建并复制 Token，通过安全方式配置凭据；确认文件上传范围后才提交云端识别。本地路线不调用 MinerU、不要求 Token，也不上传文件。
