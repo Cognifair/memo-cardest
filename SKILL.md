@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能：知识拆解、题型、卡片正文、改卡与牌组操作。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡，或要求连接墨墨 API、改牌组里的卡片时使用。开工先做启动同步（首次问三档），再确认专业版；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.4"
+  version: "1.3.5"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.4
+# 墨卡大师 Memo-Cardest v1.3.5
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -40,9 +40,10 @@ metadata:
 - 用户原话出现「未开通」→ TXT 路径。
 - 两者都没有且环境变量也没有 → 问一句「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等明确回答再继续。
 - 历史连接成功、牌组数量、旧任务记录都不能单独作为依据。答复里留一行：`member: pro（用户提供 API key）` 或 `member: free（用户原话）`。
+- **只配置用户自己的 key**：不得把他人提供的、共享的、来源不明或疑似他人的 key 写入本机环境变量；key 来源存疑时先停下确认，宁可只用本次会话。
 - **拿到 key 后，用问题框问一次是否存成用户环境变量**（仅当 key 来自本次输入且 `MAIMEMO_TOKEN` 还没设置）：
-  「要把这个 key 设为用户环境变量 `MAIMEMO_TOKEN` 吗？以后就不用每次粘贴。」
-  ① 设置到用户环境变量（仅本机、当前 Windows 用户生效）
+  「要把这个 key 设为用户环境变量 `MAIMEMO_TOKEN` 吗？**请确认这是你自己账户的 key**——写错或接错，后续所有请求都会操作别人的账户。以后就不用每次粘贴。」
+  ① 是我自己的 key，设置到用户环境变量（仅本机、当前 Windows 用户生效）
   ② 不用，仅本次使用
   - 选①：执行 `setx MAIMEMO_TOKEN "<key>"`，**不要回显 key**；成功只报 `token_env: set`，失败说明原因并继续用本次的 key。`setx` 只影响新进程，本次会话仍用当前 key，下次启动生效。
   - 选②：只在本次使用，不落盘，报 `token_env: session_only`。
