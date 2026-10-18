@@ -6,7 +6,7 @@
 
 `version_url` 为 `null` 表示暂无可检查的版本源；未配置不等于已经是最新版。版本检查与新支链发现分别授权、默认关闭。三份 `version.json` 均已于 2026-10-18 逐项核验可读，`allowed_version_hosts` 只放行 `raw.githubusercontent.com`。
 
-**安装必须是 git 工作副本**：自动同步用 `git pull --ff-only`，复制文件或解压 ZIP 装出来的目录没有 `.git`，同步会返回 `skipped: not_a_git_checkout`，看起来已装但永远不会更新。
+**自动同步需要 git 工作副本**：同步显式拉取清单中的远端分支，核验技能身份与版本后快进合并。复制文件或解压 ZIP 安装仍可制卡，但没有 `.git`，同步会返回 `skipped: not_a_git_checkout`。
 
 ```json
 {
@@ -30,6 +30,7 @@
       "capability": "先选择本地非 MinerU OCR 或官网云端，再对扫描材料与大 PDF 拆分识别、整理素材并合并 Markdown",
       "install_source": "github_public_repository",
       "repository_url": "https://github.com/Cognifair/memo-mineruocr",
+      "repository_branch": "main",
       "marketplace_listing": null,
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-mineruocr/main/version.json"
     },
@@ -39,6 +40,7 @@
       "capability": "封装与校验 TXT 章节、分卡符和答案线",
       "install_source": "github_public_repository",
       "repository_url": "https://github.com/Cognifair/memo-txtimporter",
+      "repository_branch": "main",
       "marketplace_listing": null,
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-txtimporter/main/version.json"
     },
@@ -48,6 +50,7 @@
       "capability": "制作表格图片或 LaTeX array 表格",
       "install_source": "github_public_repository",
       "repository_url": "https://github.com/Cognifair/memo-table",
+      "repository_branch": "main",
       "marketplace_listing": null,
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-table/main/version.json"
     }

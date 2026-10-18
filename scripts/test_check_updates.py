@@ -2,7 +2,11 @@
 import copy
 import importlib.util
 import json
+import io
+from contextlib import redirect_stdout
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch, Mock
@@ -134,15 +138,34 @@ class FrameworkTests(unittest.TestCase):
         (repo / ".git").mkdir(parents=True)
         row = dict(self.row, path=str(repo), repository_url="https://github.com/Example/memo-test")
         with patch.object(m, "run_git", return_value=(0, "https://github.com/Other/memo-test.git", "")):
-            self.assertEqual(m.apply_update(row)["reason"], "remote_mismatch")
+            self.assertEqual(m.apply_update(row, "1.1.0")["reason"], "remote_mismatch")
         with patch.object(m, "run_git", side_effect=[(0, "https://github.com/Example/memo-test.git", ""),
                                                      (0, " M SKILL.md", "")]):
-            self.assertEqual(m.apply_update(row)["reason"], "dirty_worktree")
-        with patch.object(m, "run_git", side_effect=[(0, "https://github.com/Example/memo-test.git", ""),
-                                                     (0, "", ""), (0, "", "")]):
-            (repo / "SKILL.md").write_text('---\nname: memo-test\nmetadata:\n  version: "1.1.0"\n---\n',
-                                           encoding="utf-8")
-            self.assertEqual(m.apply_update(row)["result"], "updated")
+            self.assertEqual(m.apply_update(row, "1.1.0")["reason"], "dirty_worktree")
+
+    def test_update_failure_is_reported_as_partial(self):
+        self.state.update(sync_mode="once", sync_pending_once=True)
+        failure = {"id": "memo-test", "result": "failed", "reason": "fetch_failed"}
+        with patch.object(m, "apply_update", return_value=failure):
+            report = m.run_sync(self.cfg, [self.row], self.state, fetcher=lambda *_: "1.1.0")
+        self.assertEqual(report["status"], "partial")
+        self.assertEqual(report["failed"][0]["reason"], "fetch_failed")
+        self.assertFalse(report["skipped"])
+        self.assertFalse(self.state["sync_pending_once"])
+
+    def test_git_exceptions_are_per_item_and_other_updates_continue(self):
+        for error in (FileNotFoundError(), subprocess.TimeoutExpired("git", 180)):
+            with self.subTest(error=type(error).__name__):
+                repo = self.base / "repo"
+                (repo / ".git").mkdir(parents=True, exist_ok=True)
+                row = dict(self.row, path=str(repo), repository_url="https://github.com/Example/memo-test")
+                other = dict(self.row, id="memo-other")
+                self.state["sync_mode"] = "auto"
+                with patch.object(m, "run_git", side_effect=error):
+                    report = m.run_sync(self.cfg, [row, other], self.state, fetcher=lambda *_: "1.1.0")
+                self.assertEqual(report["status"], "partial")
+                self.assertEqual(report["failed"][0]["id"], "memo-test")
+                self.assertEqual(report["skipped"][0]["id"], "memo-other")
 
     def test_inventory_reports_git_checkout(self):
         root = self.base / "root"
@@ -194,6 +217,90 @@ class FrameworkTests(unittest.TestCase):
             with self.assertRaises(OSError):
                 with m.locked(self.base / "state.json"):
                     self.fail("Second writer acquired lock")
+
+
+class GitUpdateTests(unittest.TestCase):
+    """Real local repositories; only the verified remote's fetch is mapped to a fixture."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.source = self.base / "source"
+        self.source.mkdir()
+        self.git(self.source, "init", "-b", "main")
+        self.commit_skill(self.source, "1.0.0")
+        self.checkout = self.base / "checkout"
+        self.other = self.base / "other"
+        self.git(self.base, "clone", str(self.source), str(self.checkout))
+        self.git(self.base, "clone", str(self.source), str(self.other))
+        self.commit_skill(self.source, "1.1.0")
+        self.commit_skill(self.other, "9.0.0")
+        self.git(self.checkout, "remote", "set-url", "origin", "https://github.com/Example/memo-test")
+        self.git(self.checkout, "remote", "add", "other", str(self.other))
+        self.git(self.checkout, "config", "branch.main.remote", "other")
+        self.git(self.checkout, "config", "branch.main.merge", "refs/heads/main")
+        self.before = self.git(self.checkout, "rev-parse", "HEAD")
+        self.row = {"id": "memo-test", "path": str(self.checkout),
+                    "repository_url": "https://github.com/Example/memo-test", "repository_branch": "main"}
+        self.real_run_git = m.run_git
+        self.calls = []
+        self.patcher = patch.object(m, "run_git", side_effect=self.local_git)
+        self.patcher.start()
+        self.addCleanup(self.patcher.stop)
+
+    def git(self, path, *args):
+        result = subprocess.run(["git", "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", *args],
+                                cwd=path, capture_output=True, text=True, encoding="utf-8")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return result.stdout.strip()
+
+    def commit_skill(self, repo, version, name="memo-test"):
+        (repo / "SKILL.md").write_text(f'---\nname: {name}\nmetadata:\n  version: "{version}"\n---\n', encoding="utf-8")
+        self.git(repo, "add", "SKILL.md")
+        self.git(repo, "commit", "-m", version)
+
+    def local_git(self, path, *args):
+        self.calls.append(args)
+        if args[:1] == ("fetch",):
+            self.assertEqual(args, ("fetch", "--no-tags", "origin", "refs/heads/main"))
+            args = ("fetch", "--no-tags", str(self.source), "refs/heads/main")
+        return self.real_run_git(path, *args)
+
+    def test_wrong_upstream_cannot_select_update_source(self):
+        result = m.apply_update(self.row, "1.1.0")
+        self.assertEqual(result["result"], "updated")
+        self.assertEqual(m.skill_metadata(self.checkout / "SKILL.md"), ("memo-test", "1.1.0"))
+        self.assertEqual(result["commit"], self.git(self.source, "rev-parse", "HEAD"))
+        self.assertEqual(self.git(self.checkout, "config", "branch.main.remote"), "other")
+
+    def test_manifest_mismatch_leaves_worktree_unchanged(self):
+        result = m.apply_update(self.row, "1.2.0")
+        self.assertEqual(result["reason"], "target_metadata_mismatch")
+        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD"), self.before)
+        self.assertEqual(m.skill_metadata(self.checkout / "SKILL.md")[1], "1.0.0")
+
+    def test_wrong_skill_identity_is_rejected_before_merge(self):
+        self.commit_skill(self.source, "1.1.0", name="memo-other")
+        self.assertEqual(m.apply_update(self.row, "1.1.0")["reason"], "target_metadata_mismatch")
+        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD"), self.before)
+
+    def test_feature_branch_is_not_modified(self):
+        self.git(self.checkout, "checkout", "-b", "local-work")
+        self.assertEqual(m.apply_update(self.row, "1.1.0")["reason"], "branch_mismatch")
+        self.assertFalse(any(call[0] == "fetch" for call in self.calls))
+
+    def test_divergent_history_is_not_merged(self):
+        self.commit_skill(self.checkout, "1.0.1")
+        before = self.git(self.checkout, "rev-parse", "HEAD")
+        self.assertEqual(m.apply_update(self.row, "1.1.0")["reason"], "not_fast_forward")
+        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD"), before)
+
+    def test_failed_post_update_verification_is_not_success(self):
+        with patch.object(m, "skill_metadata", return_value=("memo-test", "1.0.0")):
+            result = m.apply_update(self.row, "1.1.0")
+        self.assertEqual(result["reason"], "update_verification_failed")
+        self.assertTrue(result["needs_verification"])
 
 
 class DiscoveryTests(unittest.TestCase):
@@ -486,6 +593,66 @@ class CliLifecycleTests(unittest.TestCase):
         self.assertEqual(report["status"], "done")
         self.assertEqual(self.run_cli("sync")["status"], "off")
 
+    def main_sync(self):
+        args = ["check_updates.py", "--skill-root", str(self.skill_root), "--root", str(self.installed_root),
+                "--state-dir", str(self.state_dir), "sync"]
+        output = io.StringIO()
+        with patch.object(sys, "argv", args), redirect_stdout(output):
+            code = m.main()
+        return code, json.loads(output.getvalue())
+
+    def test_corrupt_state_is_preserved_without_sync_or_new_consent(self):
+        self.state_dir.mkdir()
+        path = self.state_dir / "memo-cardest.json"
+        path.write_text("{broken", encoding="utf-8")
+        with patch.object(m, "run_sync") as sync:
+            code, result = self.main_sync()
+        self.assertEqual(code, 1)
+        self.assertEqual(result["reason"], "state_read_failed")
+        self.assertEqual(path.read_text(encoding="utf-8"), "{broken")
+        sync.assert_not_called()
+
+    def test_unwritable_state_prevents_sync(self):
+        self.run_cli("sync-consent", "auto")
+        with patch.object(m, "save_state", side_effect=PermissionError()), patch.object(m, "run_sync") as sync:
+            code, result = self.main_sync()
+        self.assertEqual(code, 1)
+        self.assertEqual(result["reason"], "state_preflight_failed")
+        sync.assert_not_called()
+        self.assertEqual(self.run_cli("status")["state"]["sync_mode"], "auto")
+
+    def test_once_is_consumed_before_sync_and_report_survives_save_failure(self):
+        self.run_cli("sync-consent", "once")
+        real_save = m.save_state
+        calls = []
+        report = {"status": "done", "updated": [{"id": "memo-test", "version": "1.1.0"}]}
+
+        def save(path, state):
+            calls.append(state.copy())
+            if len(calls) > 1:
+                raise PermissionError()
+            real_save(path, state)
+
+        def sync(*_):
+            persisted = m.read_state(self.state_dir / "memo-cardest.json")
+            self.assertFalse(persisted["sync_pending_once"])
+            return report
+
+        with patch.object(m, "save_state", side_effect=save), patch.object(m, "run_sync", side_effect=sync):
+            code, result = self.main_sync()
+        self.assertEqual(code, 1)
+        self.assertEqual(result["reason"], "state_save_failed")
+        self.assertEqual(result["sync_report"], report)
+        self.assertEqual(self.run_cli("sync")["status"], "off")
+
+    def test_locked_state_does_not_reset_or_run_sync(self):
+        self.run_cli("sync-consent", "auto")
+        with m.locked(self.state_dir / "memo-cardest.json"), patch.object(m, "run_sync") as sync:
+            code, result = self.main_sync()
+        self.assertEqual(code, 1)
+        self.assertEqual(result["reason"], "state_lock_failed")
+        sync.assert_not_called()
+
 
 class ConfigValidationTests(unittest.TestCase):
     """The published config distributes skills as public GitHub repositories."""
@@ -530,6 +697,11 @@ class ConfigValidationTests(unittest.TestCase):
 
     def test_github_source_must_not_claim_marketplace_listing(self):
         self.assertRaises(ValueError, self.write_config, marketplace_listing={"url": "https://market/x"})
+
+    def test_unsafe_repository_branch_is_rejected(self):
+        for branch in ("--upload-pack=x", "../main", "main..old", "main.lock", "a//b", "a/", "a/.hidden", None):
+            with self.subTest(branch=branch):
+                self.assertRaises(ValueError, self.write_config, repository_branch=branch)
 
     def test_published_config_file_is_valid(self):
         published = Path(__file__).resolve().parent.parent

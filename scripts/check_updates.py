@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local inventory, version checks and public Memo discovery; never installs."""
+"""Inventory, consented fast-forward updates and public Memo discovery; never installs new skills."""
 import argparse
 from contextlib import contextmanager
 from functools import total_ordering
@@ -48,7 +48,13 @@ def skill_metadata(path):
     """Read a supported plain YAML frontmatter subset, never the body."""
     if path.is_symlink() or path.stat().st_size > 262144:
         raise ValueError("Unsafe or oversized SKILL.md")
-    text = path.read_text(encoding="utf-8-sig")
+    return skill_metadata_text(path.read_text(encoding="utf-8-sig"))
+
+
+def skill_metadata_text(text):
+    if len(text.encode("utf-8")) > 262144:
+        raise ValueError("Oversized SKILL.md")
+    text = text.lstrip("\ufeff")
     match = re.match(r"\A---\r?\n(.*?)\r?\n---(?:\r?\n|$)", text, re.S)
     if not match:
         raise ValueError("Missing closed frontmatter")
@@ -98,6 +104,7 @@ def config(root):
             raise ValueError("Missing satellite description")
         if source == "github_public_repository":
             validate_repository_url(item.get("repository_url"))
+            validate_branch(item.get("repository_branch", "main"))
             if item.get("marketplace_listing") is not None:
                 raise ValueError("Public GitHub satellites are not marketplace listings")
         if item.get("version_url") is not None:
@@ -119,6 +126,15 @@ def validate_discovery(source):
 
 
 REPOSITORY = re.compile(r"/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9._-]{1,100}\Z")
+
+
+def validate_branch(branch):
+    if (not isinstance(branch, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,199}", branch)
+            or ".." in branch or "//" in branch
+            or any(part.startswith(".") or part.endswith((".", ".lock")) for part in branch.split("/"))
+            or branch.endswith("/")):
+        raise ValueError("Invalid repository branch")
+    return branch
 
 
 def validate_repository_url(url):
@@ -300,7 +316,16 @@ def run_git(path, *arguments):
     return result.returncode, (result.stdout or "").strip(), (result.stderr or "").strip()
 
 
-def apply_update(row):
+def apply_update(row, target_version):
+    try:
+        return _apply_update(row, target_version)
+    except subprocess.TimeoutExpired:
+        return {"id": row["id"], "result": "failed", "reason": "git_timeout", "needs_verification": True}
+    except OSError:
+        return {"id": row["id"], "result": "failed", "reason": "git_or_file_unavailable", "needs_verification": True}
+
+
+def _apply_update(row, target_version):
     """Fast-forward one installed satellite from its verified public repository."""
     path = Path(row["path"]) if row.get("path") else None
     if path is None or not path.is_dir() or not (path / ".git").is_dir():
@@ -308,7 +333,9 @@ def apply_update(row):
     expected = row.get("repository_url")
     if not expected:
         return {"id": row["id"], "result": "skipped", "reason": "no_repository_url"}
-    code, actual, _ = run_git(path, "remote", "get-url", "origin")
+    validate_repository_url(expected)
+    branch = validate_branch(row.get("repository_branch", "main"))
+    code, actual, _ = run_git(path, "remote", "get-url", "--all", "origin")
     if code != 0 or not same_remote(actual, expected):
         return {"id": row["id"], "result": "skipped", "reason": "remote_mismatch"}
     code, status, _ = run_git(path, "status", "--porcelain")
@@ -316,14 +343,37 @@ def apply_update(row):
         return {"id": row["id"], "result": "failed", "reason": "git_status_failed"}
     if status:
         return {"id": row["id"], "result": "skipped", "reason": "dirty_worktree"}
-    code, _, _ = run_git(path, "pull", "--ff-only")
+    code, current, _ = run_git(path, "symbolic-ref", "--quiet", "--short", "HEAD")
+    if code != 0 or current != branch:
+        return {"id": row["id"], "result": "skipped", "reason": "branch_mismatch"}
+    # Select the verified remote and branch explicitly; never use branch.*.remote/merge.
+    code, _, _ = run_git(path, "fetch", "--no-tags", "origin", "refs/heads/" + branch)
     if code != 0:
-        return {"id": row["id"], "result": "failed", "reason": "pull_failed"}
+        return {"id": row["id"], "result": "failed", "reason": "fetch_failed"}
+    code, commit, _ = run_git(path, "rev-parse", "--verify", "FETCH_HEAD^{commit}")
+    if code != 0:
+        return {"id": row["id"], "result": "failed", "reason": "fetch_head_invalid"}
+    code, document, _ = run_git(path, "show", commit + ":SKILL.md")
     try:
-        version = skill_metadata(path / "SKILL.md")[1]
+        identity, version = skill_metadata_text(document)
+    except ValueError:
+        identity, version = None, None
+    if code != 0 or identity != row["id"] or version != target_version:
+        return {"id": row["id"], "result": "failed", "reason": "target_metadata_mismatch"}
+    code, _, _ = run_git(path, "merge-base", "--is-ancestor", "HEAD", commit)
+    if code != 0:
+        return {"id": row["id"], "result": "skipped", "reason": "not_fast_forward"}
+    code, _, _ = run_git(path, "merge", "--ff-only", commit)
+    if code != 0:
+        return {"id": row["id"], "result": "failed", "reason": "merge_failed", "needs_verification": True}
+    try:
+        identity, version = skill_metadata(path / "SKILL.md")
     except (OSError, ValueError):
-        version = None
-    return {"id": row["id"], "result": "updated", "version": version}
+        identity, version = None, None
+    code, head, _ = run_git(path, "rev-parse", "HEAD")
+    if code != 0 or head != commit or identity != row["id"] or version != target_version:
+        return {"id": row["id"], "result": "failed", "reason": "update_verification_failed", "needs_verification": True}
+    return {"id": row["id"], "result": "updated", "version": version, "commit": commit}
 
 
 def run_sync(cfg, rows, state, now=None, fetcher=None):
@@ -346,9 +396,11 @@ def run_sync(cfg, rows, state, now=None, fetcher=None):
         row = next((candidate for candidate in rows if candidate["id"] == item["id"]), None)
         if row is None:
             continue
-        outcome = apply_update(row)
+        outcome = apply_update(row, item["remote"])
         if outcome["result"] == "updated":
             report["updated"].append(outcome)
+        elif outcome["result"] == "failed":
+            report["failed"].append(dict(outcome, stage="update"))
         else:
             report["skipped"].append(outcome)
     if authorized_once:
@@ -589,6 +641,8 @@ def main():
     discovering = sub.add_parser("discover")
     discovering.add_argument("--manual", action="store_true")
     args = parser.parse_args()
+    stage = "configuration"
+    output = None
     try:
         cfg = config(args.skill_root)
         roots = args.root or [args.skill_root.parent, Path.home() / ".agents/skills", Path.home() / ".codex/skills"]
@@ -598,10 +652,14 @@ def main():
         if args.action == "inventory":
             output = {"host": cfg["skill_id"], "satellites": rows}
         elif args.action == "status":
+            stage = "state_read"
             output = {"host": cfg["skill_id"], "state": read_state(state_path), "satellites": rows}
         else:
+            stage = "state_lock"
             with locked(state_path):
+                stage = "state_read"
                 state = read_state(state_path)
+                stage = "operation"
                 if args.action == "complete":
                     action = complete_task(state, rows, args.task_id)
                     output = {"next_action": action, "satellites": rows}
@@ -641,6 +699,13 @@ def main():
                     state["auto_check"] = args.choice == "auto"
                     output = {"sync_mode": state["sync_mode"], "pending": state["sync_pending_once"]}
                 elif args.action == "sync":
+                    # Verify writable state before network/mutations. Consume once durably
+                    # before updating so a crash cannot replay one-time authorization.
+                    stage = "state_preflight"
+                    reserved = dict(state)
+                    reserved["sync_pending_once"] = False
+                    save_state(state_path, reserved)
+                    stage = "sync"
                     output = run_sync(cfg, rows, state)
                 elif args.action == "missing":
                     target = next((row for row in rows if row["id"] == args.id), None)
@@ -665,11 +730,17 @@ def main():
                             state["pending_discovery_once"] = False
                     if not args.manual:
                         state["pending_once"] = False
+                stage = "state_save"
                 save_state(state_path, state)
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
     except Exception:
-        print(json.dumps({"status": "error", "message": "Local configuration/state is invalid or busy; no installation performed."}))
+        error = {"status": "error", "reason": stage + "_failed",
+                 "message": "Sync/check unavailable; preserve existing consent and continue independent card work."}
+        if args.action == "sync" and output is not None:
+            error["sync_report"] = output
+            error["message"] = "State save failed after sync; inspect sync_report and local versions before retrying."
+        print(json.dumps(error, ensure_ascii=False))
         return 1
 
 

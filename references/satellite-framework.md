@@ -28,7 +28,7 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
 
 ## 开局同步与授权（S0）
 
-每次业务任务开始时**先同步、再干活**。同步是流程第一步，不是收尾动作。
+每次业务任务先读取同步状态；正常首次使用在开头完成初始化选择，已有偏好按记录执行。脚本或状态异常时按下面的降级分支继续业务。命令相对本技能目录执行。
 
     python scripts/check_updates.py sync
 
@@ -40,34 +40,37 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
   2. 以后自动帮我同步
   3. 不需要
 
-  选项固定、平级、按此顺序，无推荐标记。**必须用当前 Agent 的交互式问题框（如 `ask_user_question`）呈现**，让用户点选；不得只把问题写进正文就结束回合，也不得直接终止对话。用户没有选择就不推进任何后续步骤。环境确实没有提问控件时，才退回普通文字提问，并明确说明在等选择。得到回答后执行：
+  选项固定、平级、按此顺序，无推荐标记。用当前 Agent 可用且允许用于此类问题的问题框呈现；没有适用控件时用文字提问。正常初始化中，用户没有选择就等待，不推进后续业务，不把沉默当授权。“不需要”是长期关闭，不是仅本次跳过。得到回答后执行：
 
       python scripts/check_updates.py sync-consent once|auto|off
       python scripts/check_updates.py sync
 
-  未得到回答 → 不记录任何授权，按未授权处理，只做业务，不再自作主张。
+  未得到回答 → 保持未授权并等待选择。只有下面已证实的脚本/状态故障才能走异常分支，不能以用户未回答为由跳过初始化。
 - `done`：本轮检查完成；`auto` 下还会从各支链已核实的 `repository_url` 做 fast-forward 更新。`updated` 要报出新版本；`failed` / `skipped` 要说明哪些没更新、为什么。
 - `off`：用户选过「不需要」，一行带过，不追问、不重复问。
+- `partial`：存在版本检查或更新失败，按 `failed` 报告，不声称全部更新成功。
+- `error`：脚本/状态异常，本次停同步、继续独立业务；若含 `sync_report`，其中更新可能已完成，保留实际结果，不报“没有发生更新”。
 
 边界与补救：
 
 - 用户直接给 API key 并要求改卡，也是业务任务：先问同步，再动 API，不能因为“只是改一张卡”跳过。
-- 脚本跑不了（没装 Python、路径不对、权限不足）时，**仍要先问同步授权**，不得以“工具不可用”为由跳过提问。
+- 脚本不可运行、状态损坏/被锁、读取或保存失败时，报 `sync: unavailable · <原因>`；不运行同步、不重置授权、不反复询问，继续独立可完成的制卡。已选偏好仅在本次对话中保留，不声称已持久化；恢复后依据明确选择保存，不能重新猜授权。
+- 同步 CLI 在联网/更新前先验证状态可写；`once` 在动作前持久化为已消费，一次尝试包括失败或中断，避免崩溃后重复使用授权。最后保存失败时返回 `state_save_failed` 与 `sync_report`，先核对本地版本再决定是否重试。
 - 已经动手才发现漏了 S0：立刻停下说明，补跑 `sync` 并按结果询问，再继续；不得隐瞒或假装做过。
-- 这类会话的典型特征是状态里 `last_sync` 为空、回复里没有 `sync:` 行；发现这两点就说明 S0 被跳过了。
+- `last_sync` 为空也可能是首次、关闭或保存故障，不能据此断言曾跳过 S0；根据实际执行结果报告。
 
 授权语义：
 
-- `once`：只同步这一次，`sync_pending_once` 记录待执行，执行后自动清除，此后按 `off` 处理。
+- `once`：只尝试同步这一次，`sync_pending_once` 记录待执行，CLI 在动作前持久化清除，此后按 `off` 处理；即使失败也不自动再用一次授权。
 - `auto`：以后每次任务开局都同步，无需再问，也不再逐次确认。
 - `off`：不同步；用户以后主动改口才重新授权。
 - 旧版本遗留的 `auto_check` 授权**不会**自动升级成 `auto`：旧授权只允许检查，不允许实际更新。
 
 同步范围与边界：
 
-- 只同步清单内的支链，来源是各自 `repository_url`；只做 `git pull --ff-only`。
-- 工作区不干净、远端与清单不符、不是 git 仓库 → 跳过并说明原因，不覆盖本地改动。
-- **主技能不自动覆盖自己**：发现新版本只报告，等用户明确要求再更新。
+- 只同步清单内的支链：核对 `origin` 的唯一有效 URL 与 `repository_url`，当前分支须为 `repository_branch`（缺省 `main`）。显式 `fetch --no-tags origin refs/heads/<branch>`，检查候选 `SKILL.md` 的名称和版本与版本清单一致，再 `merge --ff-only <已核验提交>`，最后核对本地身份、版本与 HEAD。当前分支配置的其他 upstream 不参与选择。
+- 工作区不干净、远端/当前分支不符、不是 git 仓库、不能快进 → 跳过并说明原因，不覆盖本地改动。拉取、合并或核验失败进 `failed`；超时/读回失败需先核查，不能盲目重试或宣称已更新。
+- 主技能不在此检查范围，也不自动更新；主技能更新由用户明确要求的维护流程处理。
 - 同步失败或跳过不阻塞业务，但必须在报告里写清楚。
 
 缺失能力介绍仍用 `complete`，它不再负责询问更新授权：
@@ -104,14 +107,14 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
 - status=up_to_date 只表示 checked 列出的目标已查且未更新；同时有 skipped 时必须说明哪些未覆盖，不能泛称全部最新。
 - not_configured 表示没有可检查的版本源/本地版本，不是最新版确认。throttled 是节流跳过；failed/partial 是失败或部分成功，不是无更新。
 - 开局同步每次都要一句结果（`sync: auto · 3 checked · no updates` 之类）；业务中途的临时 `check` 不重复刷屏，失败一次说明即可，不把重复故障变成骚扰。
-- 实际更新只发生在 `sync`：从清单内、`repository_url` 已核实的仓库 `git pull --ff-only`；工作区脏、远端不符、非 git 仓库一律跳过。`check` 仍然只读版本清单，不写本地代码。
+- 实际更新只发生在 `sync`，按上面的显式远端/分支、候选校验与快进流程执行。`check` 仍然只读版本清单，不写本地代码。`done` 仅表示本轮完成，仍须查看 `skipped`；`partial` 表示存在失败。
 - 来源未核实、支链不在清单、或用户没有明确要求时，说明限制并把仓库地址交给用户自行处理；不得静默改走第三方镜像或代理下载。
 - `skill-publisher` 内置 Memo 模式的“上传本地改动到已确认 GitHub 仓库”是独立流程，不是本框架的“查远端版本/更新本地”。框架授权不能授权提交、推送、建仓、打标签、运行发布器或创建自动化。
 
 ## 文件、版本与网络边界
 
 - 配置：[satellites.md](satellites.md)；执行器：../scripts/check_updates.py；根目录 version.json 只含当前技能 id/version/updated_at，供将来经确认的版本源发布使用。
-- 配置校验接受两种 `install_source`：`platform_marketplace`，以及本项目实际使用的 `github_public_repository`；后者必须带已核实的 `https://github.com/<owner>/<repo>` 形式 `repository_url` 且 `marketplace_listing` 为 `null`，否则整份配置被拒、检查器拒绝运行。
+- 配置校验接受两种 `install_source`：`platform_marketplace`，以及本项目实际使用的 `github_public_repository`；后者必须带已核实的 `https://github.com/<owner>/<repo>` 形式 `repository_url`，合法的 `repository_branch`（旧配置缺省 `main`），且 `marketplace_listing` 为 `null`，否则整份配置被拒。
 - 支持本地 SKILL.md 的 metadata.version，也兼容旧顶层 version。扫描本技能所在目录、~/.agents/skills、~/.codex/skills；同名优先本技能所在目录（即当前运行的那份副本），其余副本在 `copies` 中列出并在 `shadowed` 中标记，不覆盖或合并副本。
 - 默认 auto_check=false、auto_discover=false、sync_mode=unset；`sync` 是每次开局的第一步，业务检查另有 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Skill Publisher 的 Memo 内容指纹。
 - 每个主技能有独立本地状态；安装副本不携带他人的授权。状态损坏时停止检查，不擅自重置授权或反复弹窗。旧状态缺少 `sync_mode` 时按 `unset` 处理——首次使用会重新问一次，旧 `auto_check` 不自动升级为自动同步。
