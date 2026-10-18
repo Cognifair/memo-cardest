@@ -40,7 +40,7 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
   2. 以后自动帮我同步
   3. 不需要
 
-  选项固定、平级、按此顺序，无推荐标记。得到回答后执行：
+  选项固定、平级、按此顺序，无推荐标记。**必须用当前 Agent 的交互式问题框（如 `ask_user_question`）呈现**，让用户点选；不得只把问题写进正文就结束回合，也不得直接终止对话。用户没有选择就不推进任何后续步骤。环境确实没有提问控件时，才退回普通文字提问，并明确说明在等选择。得到回答后执行：
 
       python scripts/check_updates.py sync-consent once|auto|off
       python scripts/check_updates.py sync

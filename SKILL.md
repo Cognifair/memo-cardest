@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能，负责知识拆解、题型、正文语法和学习排版。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡时使用。先确认专业版，再按官方 OpenAPI 或 TXT 路径交付；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.1"
+  version: "1.3.2"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.1
+# 墨卡大师 Memo-Cardest v1.3.2
 
 把学习材料变成可主动回忆、可判分、符合当前 Markji 语法的卡片。调用名 `$memo-cardest`，展示名「墨卡大师 Memo-Cardest」，旧称 `Memo_Card_Maker` 只用于识别意图，不保留旧入口。
 
@@ -15,7 +15,10 @@ metadata:
 
 先同步，再做业务。回复里留一行：`sync: <模式> · <结果>`。
 
-- **首次使用**（本机 `sync_mode` 为 `unset`）：先问一句「要不要开启技能自动同步？① 仅这次同步 ② 以后自动帮我同步 ③ 不需要」，等回答；按选择执行 `python scripts/check_updates.py sync-consent once|auto|off`，再跑 `sync`。
+- **首次使用**（本机 `sync_mode` 为 `unset`）：先问「要不要开启技能自动同步？① 仅这次同步 ② 以后自动帮我同步 ③ 不需要」，等回答；按选择执行 `python scripts/check_updates.py sync-consent once|auto|off`，再跑 `sync`。
+  - **提问必须用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）发起，三个选项可点选；不得只在正文写一句问题就结束回合，更不得直接终止对话。
+  - 用户没选就不推进：不生成卡片、不调用 API、不继续任何后续步骤。
+  - 环境确实没有提问控件时，才退回文字提问，并明确写「等你选择后继续」。
 - **每次任务**：先跑 `python scripts/check_updates.py sync`。
   - 返回 `needs_consent` → 就是首次使用，问上面那一问，不得跳过。
   - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。
