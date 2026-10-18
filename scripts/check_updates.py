@@ -263,7 +263,8 @@ def locked(path):
 def inventory(cfg, roots):
     result = []
     for sat in cfg["satellites"]:
-        row = dict(sat, installed=False, local_version=None, path=None, shadowed=[], copies=[])
+        row = dict(sat, installed=False, local_version=None, path=None, shadowed=[], copies=[],
+                   git_checkout=False)
         for root in roots:
             path = root / sat["id"]
             if path.is_symlink() or not (path / "SKILL.md").is_file():
@@ -274,11 +275,13 @@ def inventory(cfg, roots):
                     continue
             except (OSError, ValueError):
                 continue
-            row["copies"].append({"path": str(path), "version": value})
+            row["copies"].append({"path": str(path), "version": value,
+                                  "git_checkout": (path / ".git").is_dir()})
             if row["installed"]:
                 row["shadowed"].append(str(path))
             else:
-                row.update(installed=True, local_version=value, path=str(path))
+                row.update(installed=True, local_version=value, path=str(path),
+                           git_checkout=(path / ".git").is_dir())
         row["version_source_configured"] = bool(row["version_url"])
         result.append(row)
     return result
@@ -351,6 +354,10 @@ def run_sync(cfg, rows, state, now=None, fetcher=None):
     if authorized_once:
         state["sync_pending_once"] = False
     state["last_sync"] = time.time() if now is None else now
+    not_git = [item["id"] for item in report["skipped"] if item.get("reason") == "not_a_git_checkout"]
+    if not_git:
+        report["hint"] = ("这些支链不是 git 工作副本，自动同步无法更新：" + ", ".join(not_git)
+                          + "。请用 git clone 重新安装（见 README「安装方式」）。")
     if report["failed"]:
         report["status"] = "partial"
     else:

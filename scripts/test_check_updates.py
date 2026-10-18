@@ -144,6 +144,29 @@ class FrameworkTests(unittest.TestCase):
                                            encoding="utf-8")
             self.assertEqual(m.apply_update(row)["result"], "updated")
 
+    def test_inventory_reports_git_checkout(self):
+        root = self.base / "root"
+        path = root / "memo-test"
+        (path / ".git").mkdir(parents=True)
+        (path / "SKILL.md").write_text('---\nname: memo-test\nmetadata:\n  version: "1.0.0"\n---\n',
+                                       encoding="utf-8")
+        cfg = {"satellites": [{"id": "memo-test", "name": "T", "capability": "x",
+                               "install_source": "platform_marketplace", "version_url": None}]}
+        row = m.inventory(cfg, [root])[0]
+        self.assertTrue(row["git_checkout"])
+        self.assertTrue(row["copies"][0]["git_checkout"])
+
+    def test_sync_hints_plain_copy_install(self):
+        plain = self.base / "plain"
+        plain.mkdir()
+        row = dict(self.row, path=str(plain))
+        state = m.default_state()
+        state["sync_mode"] = "auto"
+        report = m.run_sync(self.cfg, [row], state, now=100, fetcher=Mock(return_value="1.1.0"))
+        self.assertEqual(report["status"], "done")
+        self.assertEqual(report["skipped"][0]["reason"], "not_a_git_checkout")
+        self.assertIn("memo-test", report["hint"])
+
     def test_state_read_only_missing_and_invalid_fail_closed(self):
         file = self.base / "state/state.json"
         self.assertFalse(m.read_state(file)["auto_check"])

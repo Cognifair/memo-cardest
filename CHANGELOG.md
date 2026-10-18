@@ -2,6 +2,18 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.3.1 — 2026-10-19
+
+### 修复
+
+- `inventory` 新增 `git_checkout` 字段，逐个副本标明是否 git 工作副本。
+- `sync` 遇到 `not_a_git_checkout` 时返回 `hint`，明确提示用 `git clone` 重装，不再静默跳过。
+- 文档补充「安装方式：必须 git clone」：复制文件或解压 ZIP 装出来的目录永远不会自动更新。
+
+### 测试
+
+- 覆盖 `git_checkout` 报告与 `sync.hint` 提示。
+
 ## v1.3.0 — 2026-10-19
 
 ### 新增

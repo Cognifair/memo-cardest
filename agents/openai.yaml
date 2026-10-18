@@ -1,4 +1,4 @@
 interface:
-  display_name: "墨卡大师 Memo-Cardest v1.3.0"
+  display_name: "墨卡大师 Memo-Cardest v1.3.1"
   short_description: "核心制卡；每次开局先同步支链版本，再按专业版状态走官方 API 或 TXT"
   default_prompt: "使用 $memo-cardest（墨卡大师）制作墨墨记忆卡：先跑开局同步（首次会问是否自动同步），再确认专业版状态（已提供 API key 即视为已开通），核对最新语法后交付；按需调用 OCR/TXT 支链。"

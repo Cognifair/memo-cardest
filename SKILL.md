@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，墨墨记忆卡（Markji）的核心制卡技能，负责知识拆解、题型、正文语法和学习排版。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡或墨记制卡时使用。先确认专业版，再按官方 OpenAPI 或 TXT 路径交付；扫描件与大 PDF 的 OCR 可交由 memo-mineruocr，TXT 容器交由 memo-txtimporter，表格渲染交由 memo-table。获同意后可检查既有支链更新及新发布的 Memo 候选支链。不用于墨墨背单词；仅文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.0
+# 墨卡大师 Memo-Cardest v1.3.1
 
 把学习材料变成可主动回忆、可判分、符合当前 Markji 语法的卡片。调用名 `$memo-cardest`，展示名「墨卡大师 Memo-Cardest」，旧称 `Memo_Card_Maker` 只用于识别意图，不保留旧入口。
 
@@ -21,6 +21,7 @@ metadata:
   - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。
   - 返回 `off` → 一行带过，不追问、不重复问。
   - 有 `failed` / `skipped` → 说明哪些没更新、为什么，让用户决定。
+  - `skipped: not_a_git_checkout` 说明该支链是复制安装、不是 git 工作副本：如实说明，给出 `git clone` 的安装方式，不得假装已同步。
 - 同步只覆盖清单里的三个支链：只走各自已核实的 `repository_url`，只做 fast-forward；工作区不干净、远端不符、不是 git 仓库的一律跳过。**主技能不自动覆盖自己**，发现新版本只报告，等用户明确要求再更新。
 - 业务任务必须继续：同步失败或跳过不影响制卡，但报告里要写清楚。
 

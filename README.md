@@ -35,7 +35,19 @@
 | [Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | 文件容器：牌组信息、章节、分卡符与答案线 |
 | [Memo-Table](https://github.com/Cognifair/memo-table)（可选） | 表格图片或 LaTeX array 表格 |
 
-支链均以 **GitHub 公开仓库**分发（链接见上表），**不上架平台技能市场**。安装方式：自行下载，或在明确要求且来源已核实后由 agent 从对应仓库取回。
+支链均以 **GitHub 公开仓库**分发（链接见上表），**不上架平台技能市场**。
+
+### 安装方式：必须 `git clone`
+
+自动同步只认 git 工作副本（`git pull --ff-only`）。用拷贝文件或解压 ZIP 的方式安装，`sync` 会返回 `skipped: not_a_git_checkout`，**看起来像已装好，但永远不会自动更新**。
+
+```text
+git clone https://github.com/Cognifair/memo-mineruocr.git
+git clone https://github.com/Cognifair/memo-table.git
+git clone https://github.com/Cognifair/memo-txtimporter.git
+```
+
+克隆后用 `inventory` 确认每项都有 `.git`；`--depth 1` 的浅克隆不推荐，`pull` 偶尔需要完整历史。
 
 TXT 容器格式不等于卡片正文语法；本技能不把二者混为一谈。旧称 Memo_Card_Maker 仅用于识别自然语言意图，不是另一个显式调用名。
 

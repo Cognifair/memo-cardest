@@ -6,6 +6,8 @@
 
 `version_url` 为 `null` 表示暂无可检查的版本源；未配置不等于已经是最新版。版本检查与新支链发现分别授权、默认关闭。三份 `version.json` 均已于 2026-10-18 逐项核验可读，`allowed_version_hosts` 只放行 `raw.githubusercontent.com`。
 
+**安装必须是 git 工作副本**：自动同步用 `git pull --ff-only`，复制文件或解压 ZIP 装出来的目录没有 `.git`，同步会返回 `skipped: not_a_git_checkout`，看起来已装但永远不会更新。
+
 ```json
 {
   "schema": 1,
