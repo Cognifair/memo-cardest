@@ -109,20 +109,40 @@ class FrameworkTests(unittest.TestCase):
                 m.fetch_manifest(self.row, ["example.com"])
             factory.assert_not_called()
 
-    def test_lifecycle_intro_then_separate_consent(self):
+    def test_lifecycle_pitch_only_for_missing_satellites(self):
         missing = [dict(self.row, installed=False)]
         self.assertEqual(m.complete_task(self.state, missing, "task1"), "pitch")
         self.state.update(pitched=True, pitch_task="task1")
         self.assertEqual(m.complete_task(self.state, [self.row], "task1"), "none")
-        self.assertEqual(m.complete_task(self.state, [self.row], "task2"), "ask_update_consent")
-        self.state["asked_update"] = True
-        self.assertEqual(m.complete_task(self.state, [self.row], "task3"), "none")
+        self.assertEqual(m.complete_task(self.state, [self.row], "task2"), "none")
         self.state["declined"] = True
         self.assertEqual(m.complete_task(self.state, missing, "task4"), "none")
 
-    def test_preinstalled_extensions_ask_on_second_task(self):
-        self.assertEqual(m.complete_task(self.state, [self.row], "task1"), "none")
-        self.assertEqual(m.complete_task(self.state, [self.row], "task2"), "ask_update_consent")
+    def test_startup_sync_requires_consent_then_once_is_consumed(self):
+        fetch = Mock(return_value="1.1.0")
+        self.assertEqual(m.run_sync(self.cfg, [self.row], self.state, fetcher=fetch)["status"], "needs_consent")
+        fetch.assert_not_called()
+        self.state.update(sync_mode="once", sync_pending_once=True)
+        report = m.run_sync(self.cfg, [self.row], self.state, now=100, fetcher=fetch)
+        self.assertEqual(report["status"], "done")
+        self.assertEqual(report["updates"][0]["id"], "memo-test")
+        self.assertFalse(self.state["sync_pending_once"])
+        self.assertEqual(m.run_sync(self.cfg, [self.row], self.state, now=101, fetcher=fetch)["status"], "off")
+
+    def test_apply_update_skips_unsafe_checkouts(self):
+        repo = self.base / "repo"
+        (repo / ".git").mkdir(parents=True)
+        row = dict(self.row, path=str(repo), repository_url="https://github.com/Example/memo-test")
+        with patch.object(m, "run_git", return_value=(0, "https://github.com/Other/memo-test.git", "")):
+            self.assertEqual(m.apply_update(row)["reason"], "remote_mismatch")
+        with patch.object(m, "run_git", side_effect=[(0, "https://github.com/Example/memo-test.git", ""),
+                                                     (0, " M SKILL.md", "")]):
+            self.assertEqual(m.apply_update(row)["reason"], "dirty_worktree")
+        with patch.object(m, "run_git", side_effect=[(0, "https://github.com/Example/memo-test.git", ""),
+                                                     (0, "", ""), (0, "", "")]):
+            (repo / "SKILL.md").write_text('---\nname: memo-test\nmetadata:\n  version: "1.1.0"\n---\n',
+                                           encoding="utf-8")
+            self.assertEqual(m.apply_update(row)["result"], "updated")
 
     def test_state_read_only_missing_and_invalid_fail_closed(self):
         file = self.base / "state/state.json"
@@ -344,11 +364,11 @@ class EffectivenessTests(unittest.TestCase):
             with self.subTest(content_type=content_type), self.assertRaises(ValueError):
                 self.manifest(content_type, b'{"id":"memo-test","version":"1.1.0"}')
 
-    def test_pending_once_authorizes_exactly_one_run_and_complete_requests_it(self):
+    def test_pending_once_authorizes_exactly_one_run(self):
         state = m.default_state()
         state["pending_once"] = True
         fetch = Mock(return_value="1.1.0")
-        self.assertEqual(m.complete_task(state, [self.row], "task-1"), "check_updates")
+        self.assertEqual(m.complete_task(state, [self.row], "task-1"), "none")  # sync owns the startup question
         report = m.check_versions(self.cfg, [self.row], state, now=100, fetcher=fetch)
         self.assertEqual(report["status"], "updates_available")
         state["pending_once"] = False  # main() clears the flag after the run
@@ -429,17 +449,19 @@ class CliLifecycleTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return json.loads(result.stdout)
 
-    def test_second_task_asks_then_once_consent_runs_on_next_complete(self):
+    def test_startup_sync_needs_consent_then_off(self):
+        self.assertEqual(self.run_cli("sync")["status"], "needs_consent")
+        consent = self.run_cli("sync-consent", "off")
+        self.assertEqual(consent["sync_mode"], "off")
+        self.assertEqual(self.run_cli("sync")["status"], "off")
         self.assertEqual(self.run_cli("complete", "--task-id", "task-1")["next_action"], "none")
-        self.assertEqual(self.run_cli("complete", "--task-id", "task-2")["next_action"], "ask_update_consent")
-        consent = self.run_cli("consent", "once", "--scope", "both")
-        self.assertTrue(consent["pending_once"])
-        self.assertTrue(consent["pending_discovery_once"])
-        self.assertEqual(self.run_cli("complete", "--task-id", "task-3")["next_action"], "check_updates")
-        first_run = self.run_cli("check")
-        self.assertNotEqual(first_run["status"], "disabled")
-        second_run = self.run_cli("check")
-        self.assertEqual(second_run["status"], "disabled")
+
+    def test_once_consent_runs_one_sync_then_goes_quiet(self):
+        self.run_cli("sync-consent", "once")
+        report = self.run_cli("sync")
+        self.assertEqual(report["mode"], "once")
+        self.assertEqual(report["status"], "done")
+        self.assertEqual(self.run_cli("sync")["status"], "off")
 
 
 class ConfigValidationTests(unittest.TestCase):

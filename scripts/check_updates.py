@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import socket
+import subprocess
 import tempfile
 import time
 import urllib.parse
@@ -183,7 +184,8 @@ def default_state():
             "declined": False, "first_task": None, "pitch_task": None,
             "last_checks": {}, "missing_notices": {}, "auto_discover": False,
             "asked_discovery": False, "discovery_candidates": {}, "discovery_notices": [],
-            "discovery_dismissed": [], "pending_once": False, "pending_discovery_once": False}
+            "discovery_dismissed": [], "pending_once": False, "pending_discovery_once": False,
+            "sync_mode": "unset", "sync_pending_once": False, "last_sync": None}
 
 
 def read_state(path):
@@ -198,8 +200,13 @@ def read_state(path):
     result.update(data)
     if any(type(result[key]) is not bool for key in ("auto_check", "pitched", "asked_update", "declined",
                                                    "auto_discover", "asked_discovery",
-                                                   "pending_once", "pending_discovery_once")):
+                                                   "pending_once", "pending_discovery_once",
+                                                   "sync_pending_once")):
         raise ValueError("Invalid consent state")
+    if result["sync_mode"] not in ("unset", "once", "auto", "off"):
+        raise ValueError("Invalid sync mode")
+    if result["last_sync"] is not None and type(result["last_sync"]) not in (int, float):
+        raise ValueError("Invalid sync timestamp")
     if not isinstance(result["last_checks"], dict) or not isinstance(result["missing_notices"], dict):
         raise ValueError("Invalid local state maps")
     if (not isinstance(result["discovery_candidates"], dict)
@@ -277,20 +284,88 @@ def inventory(cfg, roots):
     return result
 
 
+def same_remote(actual, expected):
+    def norm(value):
+        return (value or "").strip().rstrip("/").removesuffix(".git").lower()
+    return norm(actual) == norm(expected)
+
+
+def run_git(path, *arguments):
+    result = subprocess.run(
+        ["git", "-c", "http.sslBackend=openssl", "-c", "credential.helper=", *arguments],
+        cwd=str(path), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180)
+    return result.returncode, (result.stdout or "").strip(), (result.stderr or "").strip()
+
+
+def apply_update(row):
+    """Fast-forward one installed satellite from its verified public repository."""
+    path = Path(row["path"]) if row.get("path") else None
+    if path is None or not path.is_dir() or not (path / ".git").is_dir():
+        return {"id": row["id"], "result": "skipped", "reason": "not_a_git_checkout"}
+    expected = row.get("repository_url")
+    if not expected:
+        return {"id": row["id"], "result": "skipped", "reason": "no_repository_url"}
+    code, actual, _ = run_git(path, "remote", "get-url", "origin")
+    if code != 0 or not same_remote(actual, expected):
+        return {"id": row["id"], "result": "skipped", "reason": "remote_mismatch"}
+    code, status, _ = run_git(path, "status", "--porcelain")
+    if code != 0:
+        return {"id": row["id"], "result": "failed", "reason": "git_status_failed"}
+    if status:
+        return {"id": row["id"], "result": "skipped", "reason": "dirty_worktree"}
+    code, _, _ = run_git(path, "pull", "--ff-only")
+    if code != 0:
+        return {"id": row["id"], "result": "failed", "reason": "pull_failed"}
+    try:
+        version = skill_metadata(path / "SKILL.md")[1]
+    except (OSError, ValueError):
+        version = None
+    return {"id": row["id"], "result": "updated", "version": version}
+
+
+def run_sync(cfg, rows, state, now=None, fetcher=None):
+    """Startup sync: authorized by the one-time prompt, never by silence."""
+    mode = state.get("sync_mode", "unset")
+    report = {"status": "off", "mode": mode, "checked": [], "updates": [],
+              "updated": [], "skipped": [], "failed": []}
+    if mode == "unset":
+        report["status"] = "needs_consent"
+        return report
+    authorized_once = mode == "once" and bool(state.get("sync_pending_once"))
+    if mode == "off" or (mode == "once" and not authorized_once):
+        return report
+    versions = check_versions(cfg, rows, state, manual=True, now=now, fetcher=fetcher)
+    report["checked"] = versions["checked"]
+    report["updates"] = versions["updates"]
+    report["skipped"] = [dict(item, stage="version_check") for item in versions["skipped"]]
+    report["failed"] = [dict(item, stage="version_check") for item in versions["failed"]]
+    for item in versions["updates"]:
+        row = next((candidate for candidate in rows if candidate["id"] == item["id"]), None)
+        if row is None:
+            continue
+        outcome = apply_update(row)
+        if outcome["result"] == "updated":
+            report["updated"].append(outcome)
+        else:
+            report["skipped"].append(outcome)
+    if authorized_once:
+        state["sync_pending_once"] = False
+    state["last_sync"] = time.time() if now is None else now
+    if report["failed"]:
+        report["status"] = "partial"
+    else:
+        report["status"] = "done"
+    return report
+
+
 def complete_task(state, rows, task_id):
     if not state["first_task"]:
         state["first_task"] = task_id
     missing = [row for row in rows if not row["installed"]]
-    installed = [row for row in rows if row["installed"]]
     if state["declined"]:
-        return "check_updates" if state["auto_discover"] else "none"
-    if rows and not installed and missing and not state["pitched"]:
+        return "none"
+    if rows and missing and len(missing) == len(rows) and not state["pitched"]:
         return "pitch"
-    prior_task = state["pitch_task"] or state["first_task"]
-    if installed and not state["asked_update"] and task_id != prior_task:
-        return "ask_update_consent"
-    if state["auto_check"] or state["auto_discover"] or state["pending_once"] or state["pending_discovery_once"]:
-        return "check_updates"
     return "none"
 
 
@@ -494,6 +569,9 @@ def main():
     consent = sub.add_parser("consent")
     consent.add_argument("choice", choices=["once", "auto", "off"])
     consent.add_argument("--scope", choices=["updates", "discovery", "both"], default="updates")
+    sync_consent = sub.add_parser("sync-consent")
+    sync_consent.add_argument("choice", choices=["once", "auto", "off"])
+    sub.add_parser("sync")
     missing = sub.add_parser("missing")
     missing.add_argument("--id", required=True)
     missing.add_argument("--session-id", required=True)
@@ -520,10 +598,6 @@ def main():
                 if args.action == "complete":
                     action = complete_task(state, rows, args.task_id)
                     output = {"next_action": action, "satellites": rows}
-                    output["next_discovery_action"] = (
-                        "ask_discovery_consent" if cfg.get("new_skill_discovery") and state["asked_update"]
-                        and not state["asked_discovery"] and not state["declined"]
-                        and args.task_id != (state["pitch_task"] or state["first_task"]) else "none")
                 elif args.action == "record":
                     if args.event == "pitch":
                         state.update(pitched=True, pitch_task=args.task_id)
@@ -554,6 +628,13 @@ def main():
                               "pending_once": state["pending_once"],
                               "pending_discovery_once": state["pending_discovery_once"],
                               "check_once_next": args.choice in ("once", "auto")}
+                elif args.action == "sync-consent":
+                    state["sync_mode"] = args.choice
+                    state["sync_pending_once"] = args.choice == "once"
+                    state["auto_check"] = args.choice == "auto"
+                    output = {"sync_mode": state["sync_mode"], "pending": state["sync_pending_once"]}
+                elif args.action == "sync":
+                    output = run_sync(cfg, rows, state)
                 elif args.action == "missing":
                     target = next((row for row in rows if row["id"] == args.id), None)
                     if target is None:

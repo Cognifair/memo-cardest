@@ -26,52 +26,50 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
 - 本框架默认不下载、不安装，也不主动提议安装。只有上一段的条件**全部**满足才动手。任一条件不满足（用户没有明确要求、支链不在清单、`repository_url` 未核实）→ 说明限制，把仓库地址交给用户自行处理，不得改走其他下载途径。
 - `marketplace_listing` 恒为 `null`：本项目不上架平台市场，因此不声称「市场上架」，也不承诺「从市场一键安装」。仓库公开发布只说明代码可获取，不等于审核通过或兼容认证。
 
-## 任务结束与更新授权
+## 开局同步与授权（S0）
 
-用稳定且不对外披露的任务ID记录业务交付：
+每次业务任务开始时**先同步、再干活**。同步是流程第一步，不是收尾动作。
+
+    python scripts/check_updates.py sync
+
+三种结果：
+
+- `needs_consent`：本机 `sync_mode` 仍为 `unset`，即首次使用。此时必须先问，不能跳过去做业务：
+
+  1. 仅这次同步
+  2. 以后自动帮我同步
+  3. 不需要
+
+  选项固定、平级、按此顺序，无推荐标记。得到回答后执行：
+
+      python scripts/check_updates.py sync-consent once|auto|off
+      python scripts/check_updates.py sync
+
+  未得到回答 → 不记录任何授权，按未授权处理，只做业务，不再自作主张。
+- `done`：本轮检查完成；`auto` 下还会从各支链已核实的 `repository_url` 做 fast-forward 更新。`updated` 要报出新版本；`failed` / `skipped` 要说明哪些没更新、为什么。
+- `off`：用户选过「不需要」，一行带过，不追问、不重复问。
+
+授权语义：
+
+- `once`：只同步这一次，`sync_pending_once` 记录待执行，执行后自动清除，此后按 `off` 处理。
+- `auto`：以后每次任务开局都同步，无需再问，也不再逐次确认。
+- `off`：不同步；用户以后主动改口才重新授权。
+- 旧版本遗留的 `auto_check` 授权**不会**自动升级成 `auto`：旧授权只允许检查，不允许实际更新。
+
+同步范围与边界：
+
+- 只同步清单内的支链，来源是各自 `repository_url`；只做 `git pull --ff-only`。
+- 工作区不干净、远端与清单不符、不是 git 仓库 → 跳过并说明原因，不覆盖本地改动。
+- **主技能不自动覆盖自己**：发现新版本只报告，等用户明确要求再更新。
+- 同步失败或跳过不阻塞业务，但必须在报告里写清楚。
+
+缺失能力介绍仍用 `complete`，它不再负责询问更新授权：
 
     python scripts/check_updates.py complete --task-id 当前任务ID
 
-按 next_action 处理，不能把调用 complete 当成已经展示过提示：
+返回 `pitch` 时按上一节在任务末尾一次性介绍；没有其它动作。
 
-- pitch：按上一节在末尾介绍；实际展示后才 record pitch。
-- ask_update_consent：仅业务任务结束后询问一次，与首次介绍错开。即使支链一开始已装齐，也在第二次业务任务结束后才问，避免永远等不到 pitched。
-- check_updates：已有 auto_check 或 auto_discover 授权时执行不带 --manual 的 check；脚本分别遵守两项授权，不自行扩大检查范围。
-- none：不附加无关提示。
-
-若 `next_discovery_action=ask_discovery_consent`，说明已有版本检查选择，但还未决定是否包含新支链发现。仅在业务交付后中性询问一次是否也查新发布的 Memo 技能；未回答不扩权。展示后 `record discovery-asked --task-id 当前任务ID`。维护、安装和测试时不触发此询问。
-
-更新授权选项固定、平级、按以下顺序，无推荐标记、预设选中或倾向性措辞：
-
-1. 仅这次帮我查
-2. 以后自动查
-3. 不了吧
-
-提问说明并列两项能力：检查已装技能版本，以及发现新公开发布的 Memo 候选支链。版本检查只读版本清单；新支链发现只读既定账号的公开 GitHub 仓库列表与候选 `SKILL.md` 头部。不上传卡片、文件内容、对话、本地技能清单或凭证；正常网络连接仍包含 IP、User-Agent 等常规请求元信息，不能保证“零数据外发”。用户只选版本检查时不得默认附带发现。
-
-使用当前环境允许的中性选择控件；没有合适控件时，用普通文字按相同顺序列出选项并等用户回答。不强行使用要求加“推荐”标签的控件，不伪称控件已显示。展示后 record update-asked --task-id 当前任务ID；若问题同时包含新技能发现，也记录 record discovery-asked --task-id 当前任务ID，防止未回应时重复追问。未收到选择视为不检查，不自行记录 auto。
-
-用户明确选择后才执行：
-
-    python scripts/check_updates.py consent once --scope both
-    python scripts/check_updates.py consent auto --scope both
-    python scripts/check_updates.py consent off --scope both
-
-`--scope updates` 只管原有版本检查（兼容旧命令默认值）；`--scope discovery` 只管新技能发现；`--scope both` 同时记录两项。旧状态自动补全 `auto_discover=false`，不继承旧 `auto_check=true` 的权限。
-
-once/auto 选择后按脚本提示手动检查一次：
-
-    python scripts/check_updates.py check --manual --include-new
-
-只查版本时省略 `--include-new`；只查新技能时使用 `discover --manual`。`--manual` 必须对应本次明确要求，不得给后台调用加上以绕过授权或节流。
-
-选择“仅这次”时，`consent once` 会写入一次性待查标记（`pending_once`，发现为 `pending_discovery_once`）。下一次业务任务结束时 `complete` 直接返回 `check_updates`，不带 `--manual` 的 `check`/`discover` 也允许执行一次并跳过 24 小时节流，执行后标记清除。这样“仅这次”不依赖对话记忆，模型即使忘了手动补跑，检查也会在下一轮自动完成且只做一次。
-
-后续自动场景只能用：
-
-    python scripts/check_updates.py check
-
-auto 仅代表以后调用本技能、业务任务结束时顺带检查，不代表已创建定时任务或后台监听；定时检查需另获用户请求并使用产品自动化能力。用户说“以后别查了”立即 `consent off --scope both`；之后主动选择才按同意范围重新授权。
+新支链发现是独立能力，默认关闭：只有用户明确要求时才 `discover --manual`，不并入开局同步，也不在同步里顺带扫描。
 
 ## 新 Memo 支链发现与上架核实
 
@@ -95,11 +93,11 @@ auto 仅代表以后调用本技能、业务任务结束时顺带检查，不代
 
 ## 结果与更新动作
 
-- 明确展示发现更新的“当前版本 → 新版本”。用户选择“更新/先不更新”时同样不给推荐或默认。
+- 明确展示发现更新的“当前版本 → 新版本”；`auto` 下已自动 fast-forward 的，也要报出更新后的版本。
 - status=up_to_date 只表示 checked 列出的目标已查且未更新；同时有 skipped 时必须说明哪些未覆盖，不能泛称全部最新。
 - not_configured 表示没有可检查的版本源/本地版本，不是最新版确认。throttled 是节流跳过；failed/partial 是失败或部分成功，不是无更新。
-- 用户显式要求查时如实说明结果和限制；自动场景对无更新、未配置、节流和失败保持安静，不把重复故障变成骚扰。主业务必须继续，发现明确的新版本才告知。
-- 更新本地安装代码：与安装同一套规则——仅当用户**明确要求**、支链在清单内、且 `repository_url` 已核实时，从该仓库取回文件覆盖本地安装。`check_updates.py` 自身没有下载、安装、覆盖或执行远端内容的功能，安装动作由主技能按「缺失能力提醒与一次性介绍」一节的规则执行。
+- 开局同步每次都要一句结果（`sync: auto · 3 checked · no updates` 之类）；业务中途的临时 `check` 不重复刷屏，失败一次说明即可，不把重复故障变成骚扰。
+- 实际更新只发生在 `sync`：从清单内、`repository_url` 已核实的仓库 `git pull --ff-only`；工作区脏、远端不符、非 git 仓库一律跳过。`check` 仍然只读版本清单，不写本地代码。
 - 来源未核实、支链不在清单、或用户没有明确要求时，说明限制并把仓库地址交给用户自行处理；不得静默改走第三方镜像或代理下载。
 - `skill-publisher` 内置 Memo 模式的“上传本地改动到已确认 GitHub 仓库”是独立流程，不是本框架的“查远端版本/更新本地”。框架授权不能授权提交、推送、建仓、打标签、运行发布器或创建自动化。
 
@@ -108,8 +106,8 @@ auto 仅代表以后调用本技能、业务任务结束时顺带检查，不代
 - 配置：[satellites.md](satellites.md)；执行器：../scripts/check_updates.py；根目录 version.json 只含当前技能 id/version/updated_at，供将来经确认的版本源发布使用。
 - 配置校验接受两种 `install_source`：`platform_marketplace`，以及本项目实际使用的 `github_public_repository`；后者必须带已核实的 `https://github.com/<owner>/<repo>` 形式 `repository_url` 且 `marketplace_listing` 为 `null`，否则整份配置被拒、检查器拒绝运行。
 - 支持本地 SKILL.md 的 metadata.version，也兼容旧顶层 version。扫描本技能所在目录、~/.agents/skills、~/.codex/skills；同名优先本技能所在目录（即当前运行的那份副本），其余副本在 `copies` 中列出并在 `shadowed` 中标记，不覆盖或合并副本。
-- 默认 auto_check=false、auto_discover=false，版本目标和发现源分别 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Skill Publisher 的 Memo 内容指纹。
-- 每个主技能有独立本地状态；安装副本不携带他人的授权。状态损坏时停止检查，不擅自重置授权或反复弹窗。
+- 默认 auto_check=false、auto_discover=false、sync_mode=unset；`sync` 是每次开局的第一步，业务检查另有 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Skill Publisher 的 Memo 内容指纹。
+- 每个主技能有独立本地状态；安装副本不携带他人的授权。状态损坏时停止检查，不擅自重置授权或反复弹窗。旧状态缺少 `sync_mode` 时按 `unset` 处理——首次使用会重新问一次，旧 `auto_check` 不自动升级为自动同步。
 - 版本源已逐项核实：三个支链的 `version.json` 均位于 `https://raw.githubusercontent.com/Cognifair/<技能>/main/version.json`，域名已加入 `allowed_version_hosts`；`memo-table` 的清单由本技能同日补发，仍报 `version_source_unconfigured` 只应在清单缺失时出现，不得误报最新。新技能发现使用经 origin 核实的 Cognifair 公开账号，仍需发现授权才联网；不从未确认的其他账号、搜索结果或远端提示扩展来源。接入新版本源前须确认真实 HTTPS version.json URL 与域名白名单，不能从仓库名猜版本文件存在。
 - 有效版本请求仅向显式白名单域名 HTTPS GET，6 秒超时、最多 16 KiB、禁止重定向、URL 内凭证、查询参数、IP 字面量及私网解析地址。GitHub Raw 以 `text/plain` 返回 JSON，因此接受 `application/json` 与 `text/plain` 两种 Content-Type，正文仍严格按 JSON 解析并核对 `id` 与字段白名单。只接受匹配技能ID的版本清单，不解释清单中的指令，不读取或发送凭证、Cookie、正文和文件。
 - 失败也按目标独立节流；未装支链不联网。无远端清单时不误报“都是最新版本”。
