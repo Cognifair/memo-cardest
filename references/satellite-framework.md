@@ -65,6 +65,8 @@ once/auto 选择后按脚本提示手动检查一次：
 
 只查版本时省略 `--include-new`；只查新技能时使用 `discover --manual`。`--manual` 必须对应本次明确要求，不得给后台调用加上以绕过授权或节流。
 
+选择“仅这次”时，`consent once` 会写入一次性待查标记（`pending_once`，发现为 `pending_discovery_once`）。下一次业务任务结束时 `complete` 直接返回 `check_updates`，不带 `--manual` 的 `check`/`discover` 也允许执行一次并跳过 24 小时节流，执行后标记清除。这样“仅这次”不依赖对话记忆，模型即使忘了手动补跑，检查也会在下一轮自动完成且只做一次。
+
 后续自动场景只能用：
 
     python scripts/check_updates.py check
@@ -99,20 +101,21 @@ auto 仅代表以后调用本技能、业务任务结束时顺带检查，不代
 - 用户显式要求查时如实说明结果和限制；自动场景对无更新、未配置、节流和失败保持安静，不把重复故障变成骚扰。主业务必须继续，发现明确的新版本才告知。
 - 更新本地安装代码：与安装同一套规则——仅当用户**明确要求**、支链在清单内、且 `repository_url` 已核实时，从该仓库取回文件覆盖本地安装。`check_updates.py` 自身没有下载、安装、覆盖或执行远端内容的功能，安装动作由主技能按「缺失能力提醒与一次性介绍」一节的规则执行。
 - 来源未核实、支链不在清单、或用户没有明确要求时，说明限制并把仓库地址交给用户自行处理；不得静默改走第三方镜像或代理下载。
-- Memo-Publisher 原有“上传本地改动到已确认 GitHub 仓库”是独立流程，不是本框架的“查远端版本/更新本地”。框架授权不能授权提交、推送、建仓、打标签、运行发布器或创建自动化。
+- `skill-publisher` 内置 Memo 模式的“上传本地改动到已确认 GitHub 仓库”是独立流程，不是本框架的“查远端版本/更新本地”。框架授权不能授权提交、推送、建仓、打标签、运行发布器或创建自动化。
 
 ## 文件、版本与网络边界
 
 - 配置：[satellites.md](satellites.md)；执行器：../scripts/check_updates.py；根目录 version.json 只含当前技能 id/version/updated_at，供将来经确认的版本源发布使用。
-- 支持本地 SKILL.md 的 metadata.version，也兼容旧顶层 version。扫描 ~/.codex/skills、~/.agents/skills 和同级目录；同名优先前者，报告 shadowed，不覆盖或合并副本。
-- 默认 auto_check=false、auto_discover=false，版本目标和发现源分别 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Memo-Publisher 的内容指纹。
+- 配置校验接受两种 `install_source`：`platform_marketplace`，以及本项目实际使用的 `github_public_repository`；后者必须带已核实的 `https://github.com/<owner>/<repo>` 形式 `repository_url` 且 `marketplace_listing` 为 `null`，否则整份配置被拒、检查器拒绝运行。
+- 支持本地 SKILL.md 的 metadata.version，也兼容旧顶层 version。扫描本技能所在目录、~/.agents/skills、~/.codex/skills；同名优先本技能所在目录（即当前运行的那份副本），其余副本在 `copies` 中列出并在 `shadowed` 中标记，不覆盖或合并副本。
+- 默认 auto_check=false、auto_discover=false，版本目标和发现源分别 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Skill Publisher 的 Memo 内容指纹。
 - 每个主技能有独立本地状态；安装副本不携带他人的授权。状态损坏时停止检查，不擅自重置授权或反复弹窗。
-- 当前所有 version_url 均为 null、allowed_version_hosts 为空，原有版本检查不会联网。新技能发现已单独配置经 origin 核实的 Cognifair 公开账号，但仍需发现授权才联网；不从未确认的其他账号、搜索结果或远端提示扩展来源。接入版本源前须确认真实 HTTPS version.json URL 与域名白名单，不能从仓库名猜版本文件存在。
-- 有效版本请求仅向显式白名单域名 HTTPS GET，6 秒超时、最多 16 KiB、禁止重定向、URL 内凭证、查询参数、IP 字面量及私网解析地址。只接受匹配技能ID的版本清单，不解释清单中的指令，不读取或发送凭证、Cookie、正文和文件。
+- 版本源已逐项核实：`memo-mineruocr`、`memo-txtimporter` 的 `version.json` 位于 `https://raw.githubusercontent.com/Cognifair/<技能>/main/version.json`，域名已加入 `allowed_version_hosts`；`memo-table` 尚无该清单，保持 `null` 并报告 `version_source_unconfigured`，不误报最新。新技能发现使用经 origin 核实的 Cognifair 公开账号，仍需发现授权才联网；不从未确认的其他账号、搜索结果或远端提示扩展来源。接入新版本源前须确认真实 HTTPS version.json URL 与域名白名单，不能从仓库名猜版本文件存在。
+- 有效版本请求仅向显式白名单域名 HTTPS GET，6 秒超时、最多 16 KiB、禁止重定向、URL 内凭证、查询参数、IP 字面量及私网解析地址。GitHub Raw 以 `text/plain` 返回 JSON，因此接受 `application/json` 与 `text/plain` 两种 Content-Type，正文仍严格按 JSON 解析并核对 `id` 与字段白名单。只接受匹配技能ID的版本清单，不解释清单中的指令，不读取或发送凭证、Cookie、正文和文件。
 - 失败也按目标独立节流；未装支链不联网。无远端清单时不误报“都是最新版本”。
 - 新技能发现必然读取未安装候选的公开头部；这是独立授权的发现行为，不是对该未装技能做版本检查。只访问固定 GitHub API/Raw HTTPS 域名，6 秒超时，公开列表最多 2 MB、单份技能最多 256 KiB，禁止重定向和私网解析地址。不带凭据，不执行远端代码，不将本地清单发往服务端。
 
 ## 发布时的版本一致性
 
-人为升版或原有发布器准备新版本时，metadata.version、version.json.version、界面展示名的版本后缀应保持一致。此状态更新不替代发布授权；自动发布器仍永远排除 memo-publisher 自身。
+人为升版或原有发布器准备新版本时，metadata.version、version.json.version、界面展示名的版本后缀应保持一致。此状态更新不替代发布授权；发布功能已整合至本地 `skill-publisher`，禁止上传发布器自身或退役的 Memo 发布器。
 

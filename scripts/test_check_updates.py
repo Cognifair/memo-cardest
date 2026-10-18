@@ -308,6 +308,191 @@ class DiscoveryTests(unittest.TestCase):
             factory.assert_not_called()
 
 
+class EffectivenessTests(unittest.TestCase):
+    """Regression tests for the four defects found on 2026-10-18."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.cfg = {"allowed_version_hosts": ["example.com"], "throttle_hours": 24}
+        self.row = {"id": "memo-test", "name": "Test", "installed": True,
+                    "version_url": "https://example.com/memo-test/version.json",
+                    "local_version": "1.0.0", "install_source": "platform_marketplace",
+                    "marketplace_listing": None}
+
+    def manifest(self, content_type, body):
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.status = 200
+        response.headers.get_content_type.return_value = content_type
+        response.read.return_value = body
+        opener = Mock()
+        opener.open.return_value = response
+        public = [(2, 1, 6, "", ("8.8.8.8", 443))]
+        with patch.object(m.socket, "getaddrinfo", return_value=public), \
+                patch.object(m.urllib.request, "build_opener", return_value=opener):
+            return m.fetch_manifest(self.row, ["example.com"])
+
+    def test_github_raw_text_plain_manifest_is_accepted(self):
+        self.assertEqual(self.manifest("text/plain",
+                                       b'{"id":"memo-test","version":"1.1.0","updated_at":"2026-10-18"}'), "1.1.0")
+
+    def test_unsupported_content_type_still_rejected(self):
+        for content_type in ("text/html", "application/octet-stream"):
+            with self.subTest(content_type=content_type), self.assertRaises(ValueError):
+                self.manifest(content_type, b'{"id":"memo-test","version":"1.1.0"}')
+
+    def test_pending_once_authorizes_exactly_one_run_and_complete_requests_it(self):
+        state = m.default_state()
+        state["pending_once"] = True
+        fetch = Mock(return_value="1.1.0")
+        self.assertEqual(m.complete_task(state, [self.row], "task-1"), "check_updates")
+        report = m.check_versions(self.cfg, [self.row], state, now=100, fetcher=fetch)
+        self.assertEqual(report["status"], "updates_available")
+        state["pending_once"] = False  # main() clears the flag after the run
+        disabled = m.check_versions(self.cfg, [self.row], state, now=101, fetcher=Mock(side_effect=AssertionError))
+        self.assertEqual(disabled["status"], "disabled")
+        self.assertEqual(fetch.call_count, 1)
+
+    def test_pending_once_bypasses_throttle_once(self):
+        state = m.default_state()
+        state["pending_once"] = True
+        state["last_checks"]["memo-test|" + self.row["version_url"]] = 100
+        fetch = Mock(return_value="1.1.0")
+        self.assertEqual(m.check_versions(self.cfg, [self.row], state, now=101, fetcher=fetch)["status"],
+                         "updates_available")
+        state["pending_once"] = False
+        self.assertEqual(m.check_versions(self.cfg, [self.row], state, now=102, fetcher=fetch)["status"],
+                         "disabled")
+
+    def test_inventory_prefers_running_copy_and_lists_every_copy(self):
+        first, second = self.base / "agents", self.base / "codex"
+        for root, version in ((first, "2.0.0"), (second, "1.0.0")):
+            path = root / "memo-test"
+            path.mkdir(parents=True)
+            (path / "SKILL.md").write_text(
+                '---\nname: memo-test\nmetadata:\n  version: "%s"\n---\n' % version, encoding="utf-8")
+        cfg = {"skill_id": "memo-cardest",
+               "satellites": [{"id": "memo-test", "name": "Test", "capability": "x",
+                               "install_source": "platform_marketplace",
+                               "marketplace_listing": None, "version_url": None}]}
+        row = m.inventory(cfg, [first, second])[0]
+        self.assertEqual(row["local_version"], "2.0.0")
+        self.assertEqual(row["path"], str(first / "memo-test"))
+        self.assertEqual(row["shadowed"], [str(second / "memo-test")])
+        self.assertEqual([copy["version"] for copy in row["copies"]], ["2.0.0", "1.0.0"])
+
+    def test_old_state_gains_closed_pending_flags(self):
+        path = self.base / "state.json"
+        path.write_text('{"schema":1,"auto_check":true}', encoding="utf-8")
+        restored = m.read_state(path)
+        self.assertFalse(restored["pending_once"])
+        self.assertFalse(restored["pending_discovery_once"])
+
+
+class CliLifecycleTests(unittest.TestCase):
+    """End-to-end CLI: second task asks, 'once' is durable, the run is consumed."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.base = Path(self.temp.name)
+        self.skill_root = self.base / "skills/memo-cardest"
+        (self.skill_root / "references").mkdir(parents=True)
+        (self.skill_root / "SKILL.md").write_text(
+            '---\nname: memo-cardest\nmetadata:\n  version: "1.2.0"\n---\n# host\n', encoding="utf-8")
+        config = {
+            "schema": 1, "skill_id": "memo-cardest", "auto_check": False, "throttle_hours": 24,
+            "allowed_version_hosts": [],
+            "satellites": [{"id": "memo-test", "name": "Test", "capability": "x",
+                            "install_source": "platform_marketplace",
+                            "marketplace_listing": None, "version_url": None}],
+        }
+        (self.skill_root / "references/satellites.md").write_text(
+            "# config\n\n```json\n" + json.dumps(config) + "\n```\n", encoding="utf-8")
+        self.installed_root = self.base / "installed"
+        copy_dir = self.installed_root / "memo-test"
+        copy_dir.mkdir(parents=True)
+        (copy_dir / "SKILL.md").write_text(
+            '---\nname: memo-test\nmetadata:\n  version: "1.0.0"\n---\n', encoding="utf-8")
+        self.state_dir = self.base / "state"
+
+    def run_cli(self, *args):
+        import subprocess
+        import sys
+        result = subprocess.run(
+            [sys.executable, str(Path(m.__file__)), "--skill-root", str(self.skill_root),
+             "--root", str(self.installed_root), "--state-dir", str(self.state_dir), *args],
+            capture_output=True, text=True, encoding="utf-8", errors="replace")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        return json.loads(result.stdout)
+
+    def test_second_task_asks_then_once_consent_runs_on_next_complete(self):
+        self.assertEqual(self.run_cli("complete", "--task-id", "task-1")["next_action"], "none")
+        self.assertEqual(self.run_cli("complete", "--task-id", "task-2")["next_action"], "ask_update_consent")
+        consent = self.run_cli("consent", "once", "--scope", "both")
+        self.assertTrue(consent["pending_once"])
+        self.assertTrue(consent["pending_discovery_once"])
+        self.assertEqual(self.run_cli("complete", "--task-id", "task-3")["next_action"], "check_updates")
+        first_run = self.run_cli("check")
+        self.assertNotEqual(first_run["status"], "disabled")
+        second_run = self.run_cli("check")
+        self.assertEqual(second_run["status"], "disabled")
+
+
+class ConfigValidationTests(unittest.TestCase):
+    """The published config distributes skills as public GitHub repositories."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        (self.root / "references").mkdir()
+        (self.root / "SKILL.md").write_text(
+            '---\nname: memo-cardest\nmetadata:\n  version: "1.2.0"\n---\n', encoding="utf-8")
+        self.satellite = {
+            "id": "memo-test", "name": "Test", "capability": "x",
+            "install_source": "github_public_repository",
+            "repository_url": "https://github.com/Cognifair/memo-test",
+            "marketplace_listing": None, "version_url": None,
+        }
+
+    def write_config(self, **changes):
+        satellite = dict(self.satellite, **changes)
+        config = {"schema": 1, "skill_id": "memo-cardest", "auto_check": False, "throttle_hours": 24,
+                  "allowed_version_hosts": [], "satellites": [satellite]}
+        (self.root / "references/satellites.md").write_text(
+            "# config\n\n```json\n" + json.dumps(config) + "\n```\n", encoding="utf-8")
+        return m.config(self.root)
+
+    def test_github_public_repository_source_is_accepted(self):
+        self.assertEqual(self.write_config()["satellites"][0]["id"], "memo-test")
+
+    def test_marketplace_source_still_accepted(self):
+        self.assertEqual(self.write_config(install_source="platform_marketplace",
+                                           repository_url=None)["satellites"][0]["id"], "memo-test")
+
+    def test_unknown_source_requires_valid_github_repository(self):
+        self.assertRaises(ValueError, self.write_config, install_source="zip_download")
+        for url in (None, "http://github.com/Cognifair/memo-test", "git@github.com:Cognifair/memo-test.git",
+                    "https://github.com/Cognifair/memo-test?ref=main", "https://user:pass@github.com/a/b",
+                    "https://github.com/Cognifair", "https://gitlab.com/Cognifair/memo-test",
+                    "https://github.com/Cognifair/memo-test/issues"):
+            with self.subTest(url=url):
+                self.assertRaises(ValueError, self.write_config, repository_url=url)
+
+    def test_github_source_must_not_claim_marketplace_listing(self):
+        self.assertRaises(ValueError, self.write_config, marketplace_listing={"url": "https://market/x"})
+
+    def test_published_config_file_is_valid(self):
+        published = Path(__file__).resolve().parent.parent
+        cfg = m.config(published)
+        self.assertEqual(cfg["skill_id"], "memo-cardest")
+        self.assertTrue(cfg["satellites"])
+
+
 if __name__ == "__main__":
     unittest.main()
 

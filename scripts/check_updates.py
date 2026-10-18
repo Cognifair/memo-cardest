@@ -90,10 +90,15 @@ def config(root):
         if not ID.fullmatch(sid) or sid in seen or sid == cfg["skill_id"]:
             raise ValueError("Unsafe, duplicate or self-referential satellite ID")
         seen.add(sid)
-        if item.get("install_source") != "platform_marketplace":
-            raise ValueError("Satellite installation must remain marketplace-only")
+        source = item.get("install_source")
+        if source not in ("platform_marketplace", "github_public_repository"):
+            raise ValueError("Unsupported satellite installation source")
         if not isinstance(item.get("name"), str) or not isinstance(item.get("capability"), str):
             raise ValueError("Missing satellite description")
+        if source == "github_public_repository":
+            validate_repository_url(item.get("repository_url"))
+            if item.get("marketplace_listing") is not None:
+                raise ValueError("Public GitHub satellites are not marketplace listings")
         if item.get("version_url") is not None:
             validate_url(item["version_url"], hosts)
     discovery = cfg.get("new_skill_discovery")
@@ -110,6 +115,21 @@ def validate_discovery(source):
             or type(source.get("max_pages")) is not int or not 1 <= source["max_pages"] <= 5
             or type(source.get("max_candidates")) is not int or not 1 <= source["max_candidates"] <= 20):
         raise ValueError("Invalid public Memo discovery source or request budget")
+
+
+REPOSITORY = re.compile(r"/[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9._-]{1,100}\Z")
+
+
+def validate_repository_url(url):
+    """Accept only a plain public GitHub repository URL as an install source."""
+    if not isinstance(url, str) or len(url) > 300:
+        raise ValueError("Invalid satellite repository URL")
+    value = urllib.parse.urlsplit(url)
+    if (value.scheme != "https" or value.hostname != "github.com" or value.username or value.password
+            or value.query or value.fragment or value.port not in (None, 443)
+            or not REPOSITORY.fullmatch(value.path)):
+        raise ValueError("Only https://github.com/<owner>/<repo> is supported")
+    return url
 
 
 def validate_url(url, allowed_hosts):
@@ -145,7 +165,7 @@ def fetch_manifest(item, allowed_hosts):
                                      headers={"Accept": "application/json", "User-Agent": "memo-framework/1.0"})
     opener = urllib.request.build_opener(NoRedirect())
     with opener.open(request, timeout=6) as response:
-        if response.status != 200 or "json" not in response.headers.get_content_type():
+        if response.status != 200 or response.headers.get_content_type() not in ("application/json", "text/plain"):
             raise ValueError("Expected a JSON response")
         content = response.read(MAX_BYTES + 1)
     if len(content) > MAX_BYTES:
@@ -163,7 +183,7 @@ def default_state():
             "declined": False, "first_task": None, "pitch_task": None,
             "last_checks": {}, "missing_notices": {}, "auto_discover": False,
             "asked_discovery": False, "discovery_candidates": {}, "discovery_notices": [],
-            "discovery_dismissed": []}
+            "discovery_dismissed": [], "pending_once": False, "pending_discovery_once": False}
 
 
 def read_state(path):
@@ -177,7 +197,8 @@ def read_state(path):
     result = default_state()
     result.update(data)
     if any(type(result[key]) is not bool for key in ("auto_check", "pitched", "asked_update", "declined",
-                                                   "auto_discover", "asked_discovery")):
+                                                   "auto_discover", "asked_discovery",
+                                                   "pending_once", "pending_discovery_once")):
         raise ValueError("Invalid consent state")
     if not isinstance(result["last_checks"], dict) or not isinstance(result["missing_notices"], dict):
         raise ValueError("Invalid local state maps")
@@ -235,7 +256,7 @@ def locked(path):
 def inventory(cfg, roots):
     result = []
     for sat in cfg["satellites"]:
-        row = dict(sat, installed=False, local_version=None, path=None, shadowed=[])
+        row = dict(sat, installed=False, local_version=None, path=None, shadowed=[], copies=[])
         for root in roots:
             path = root / sat["id"]
             if path.is_symlink() or not (path / "SKILL.md").is_file():
@@ -246,6 +267,7 @@ def inventory(cfg, roots):
                     continue
             except (OSError, ValueError):
                 continue
+            row["copies"].append({"path": str(path), "version": value})
             if row["installed"]:
                 row["shadowed"].append(str(path))
             else:
@@ -267,7 +289,7 @@ def complete_task(state, rows, task_id):
     prior_task = state["pitch_task"] or state["first_task"]
     if installed and not state["asked_update"] and task_id != prior_task:
         return "ask_update_consent"
-    if state["auto_check"] or state["auto_discover"]:
+    if state["auto_check"] or state["auto_discover"] or state["pending_once"] or state["pending_discovery_once"]:
         return "check_updates"
     return "none"
 
@@ -276,7 +298,8 @@ def check_versions(cfg, rows, state, manual=False, now=None, fetcher=None):
     now = time.time() if now is None else now
     fetcher = fetcher or fetch_manifest
     report = {"status": "disabled", "updates": [], "checked": [], "skipped": [], "failed": []}
-    if not manual and not state["auto_check"]:
+    authorized_once = bool(state.get("pending_once")) and not manual
+    if not manual and not state["auto_check"] and not authorized_once:
         return report
     for row in rows:
         sid = row["id"]
@@ -289,7 +312,7 @@ def check_versions(cfg, rows, state, manual=False, now=None, fetcher=None):
             reason = "local_version_unknown"
         key = sid + "|" + (row["version_url"] or "")
         last = state["last_checks"].get(key)
-        if reason is None and last is not None and not manual and now - last < cfg["throttle_hours"] * 3600:
+        if reason is None and last is not None and not manual and not authorized_once and now - last < cfg["throttle_hours"] * 3600:
             reason = "throttled"
         if reason:
             report["skipped"].append({"id": sid, "reason": reason})
@@ -371,7 +394,8 @@ def check_new_skills(cfg, roots, state, manual=False, now=None, lister=None, rea
     report = {"status": "disabled", "new_skills": [], "unannounced": [], "checked": [], "failed": [],
               "coverage": "public_github_only", "marketplace_checked": False, "truncated": False,
               "catalog_pages_checked": 0, "repositories_seen": 0}
-    if not manual and not state["auto_discover"]:
+    authorized_once = bool(state.get("pending_discovery_once")) and not manual
+    if not manual and not state["auto_discover"] and not authorized_once:
         return report
     source = cfg.get("new_skill_discovery")
     if source is None:
@@ -383,7 +407,7 @@ def check_new_skills(cfg, roots, state, manual=False, now=None, lister=None, rea
     now = time.time() if now is None else now
     key = f"discovery|github_public|{owner.lower()}"
     last = state["last_checks"].get(key)
-    if last is not None and not manual and now - last < cfg["throttle_hours"] * 3600:
+    if last is not None and not manual and not authorized_once and now - last < cfg["throttle_hours"] * 3600:
         report["status"] = "throttled"
         return report
     state["last_checks"][key] = now
@@ -482,7 +506,7 @@ def main():
     args = parser.parse_args()
     try:
         cfg = config(args.skill_root)
-        roots = args.root or [Path.home() / ".codex/skills", Path.home() / ".agents/skills", args.skill_root.parent]
+        roots = args.root or [args.skill_root.parent, Path.home() / ".agents/skills", Path.home() / ".codex/skills"]
         roots = list(dict.fromkeys(root.resolve() for root in roots))
         rows = inventory(cfg, roots)
         state_path = args.state_dir / (cfg["skill_id"] + ".json")
@@ -520,11 +544,15 @@ def main():
                     output = {"recorded": args.event}
                 elif args.action == "consent":
                     if args.scope in ("updates", "both"):
-                        state.update(asked_update=True, auto_check=args.choice == "auto", declined=False)
+                        state.update(asked_update=True, auto_check=args.choice == "auto", declined=False,
+                                     pending_once=args.choice == "once")
                     if args.scope in ("discovery", "both"):
-                        state.update(asked_discovery=True, auto_discover=args.choice == "auto")
+                        state.update(asked_discovery=True, auto_discover=args.choice == "auto",
+                                     pending_discovery_once=args.choice == "once")
                     output = {"auto_check": state["auto_check"],
                               "auto_discover": state["auto_discover"], "scope": args.scope,
+                              "pending_once": state["pending_once"],
+                              "pending_discovery_once": state["pending_discovery_once"],
                               "check_once_next": args.choice in ("once", "auto")}
                 elif args.action == "missing":
                     target = next((row for row in rows if row["id"] == args.id), None)
@@ -537,10 +565,18 @@ def main():
                     output = {"should_notify": notify, "satellite": target}
                 elif args.action == "discover":
                     output = check_new_skills(cfg, roots, state, args.manual)
+                    if not args.manual:
+                        state["pending_discovery_once"] = False
                 else:
                     output = check_versions(cfg, rows, state, args.manual)
-                    if args.include_new or state["auto_discover"]:
+                    discovery_requested = (args.include_new or state["auto_discover"]
+                                           or (state["pending_discovery_once"] and not args.manual))
+                    if discovery_requested:
                         output["discovery"] = check_new_skills(cfg, roots, state, args.manual and args.include_new)
+                        if not args.manual:
+                            state["pending_discovery_once"] = False
+                    if not args.manual:
+                        state["pending_once"] = False
                 save_state(state_path, state)
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
