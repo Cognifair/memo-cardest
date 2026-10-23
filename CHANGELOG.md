@@ -2,6 +2,22 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.0 — 2026-10-23
+
+### 新增
+
+- 支链清单新增 `memo-ankitransfer`（Anki 图片挖空 → 墨墨图片遮罩，免导出直连本机 Anki，生成位置预览）；`references/satellites.md` 补入 `repository_url` 与已核验的 `version_url`，`allowed_version_hosts` 无需变更。
+- `SKILL.md` 支链段落补充 Anki 支链的用途与边界：转换/预览不授权写卡，写入仍需目标牌组、章节与凭证，且逐张回读后才算交付。
+
+### 变更
+
+- `SKILL.md` 不再写死「三个支链」，同步范围以清单为准，避免新增支链后文案与实际不一致。
+- `references/satellite-framework.md` 与 `README.md` 同步更新支链数量、GitHub 仓库与 `git clone` 安装示例。
+
+### 核实
+
+- 2026-10-23 实测 `https://raw.githubusercontent.com/Cognifair/memo-ankitransfer/main/version.json` 返回 `200` 与 `text/plain`，`id` / `version` / `updated_at` 字段齐全（`memo-ankitransfer` `v1.1.1`），按现有白名单可直接用于版本检查。
+
 ## v1.3.9 — 2026-10-23
 
 ### 修复

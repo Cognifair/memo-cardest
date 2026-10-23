@@ -34,6 +34,7 @@
 | [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr)（可选，`$memo-mineruocr`） | 材料识别：首次选择本地非 MinerU OCR 或官网云端；大 PDF 拆分、识别并合并 Markdown 和图片 |
 | [Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | 文件容器：牌组信息、章节、分卡符与答案线 |
 | [Memo-Table](https://github.com/Cognifair/memo-table)（可选） | 表格图片或 LaTeX array 表格 |
+| [Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer)（可选） | Anki 图片挖空迁移：免导出直连本机 Anki，原图 + 矩形遮罩转墨墨图片遮罩并预览 |
 
 支链均以 **GitHub 公开仓库**分发（链接见上表），**不上架平台技能市场**。
 
@@ -45,6 +46,7 @@
 git clone https://github.com/Cognifair/memo-mineruocr.git
 git clone https://github.com/Cognifair/memo-table.git
 git clone https://github.com/Cognifair/memo-txtimporter.git
+git clone https://github.com/Cognifair/memo-ankitransfer.git
 ```
 
 克隆后用 `inventory` 确认每项都有 `.git`；`--depth 1` 的浅克隆不推荐，`pull` 偶尔需要完整历史。
@@ -85,7 +87,7 @@ OCR 支链独立使用不要求 Markji 专业版，也不会自动制卡或上�
 | 变更记录 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的更新说明 |
 | 界面配置 | `agents/openai.yaml` | 展示名与默认提示词 |
 
-支链（Memo-MinerUOCR / Memo-Txtimporter / Memo-Table）是**独立技能**，不在本仓库内，也不随本仓库分发。
+支链（Memo-MinerUOCR / Memo-Txtimporter / Memo-Table / Memo-Ankitransfer）是**独立技能**，不在本仓库内，也不随本仓库分发。
 
 ### 三条不变量
 

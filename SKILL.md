@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.3.9"
+  version: "1.4.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.3.9
+# 墨卡大师 Memo-Cardest v1.4.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -31,7 +31,7 @@ metadata:
   - `partial` 或有 `failed` / `skipped` → 说明哪些没更新、为什么，继续业务；不自动修复安装或循环重试。
   - `error` → 按上面的异常分支继续业务。若包含 `sync_report`，保留其中已验证的更新结果，说明状态保存失败，重试前只读核对本地版本；不能声称本次完全没有更新。
   - `skipped: not_a_git_checkout` 说明该支链是复制安装、不是 git 工作副本：如实说明，给出 `git clone` 的安装方式，不得假装已同步。
-- 同步只覆盖清单里的三个支链：核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward；核对候选技能身份、目标版本及更新后的提交。工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过。主技能不在此检查范围，不自动覆盖自己。
+- 同步只覆盖清单里的支链：核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward；核对候选技能身份、目标版本及更新后的提交。工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过。主技能不在此检查范围，不自动覆盖自己。
 - 业务任务必须继续：同步失败或跳过不影响制卡，但报告里要写清楚。
 
 ## G0 交付路线、会员状态与凭证
@@ -107,6 +107,7 @@ metadata:
 核心业务不依赖支链；缺失时只说限制，不伪称已调用。新安装必须用户明确要求且来源已核实；既有支链更新按 S0 保存的授权执行。
 - 扫描件、文档图片、大 PDF 拆分 OCR → `memo-mineruocr`；首次使用先选「本地非 MinerU OCR」或「MinerUOCR 官网云端」，选后者才引导注册取 Token，上传范围单独授权，不从密钥或历史推断。OCR 成功不等于知识覆盖或语法验收；用户仅要求 OCR/转 Markdown 时直接交给该支链，不触发制卡会员询问。
 - TXT 容器 → `memo-txtimporter`；表格渲染 → `memo-table`。TXT 支链缺失时可依本地 txt-workflow 封装，但不得声称跑过专用校验；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
+- Anki 图片挖空迁移 → `memo-ankitransfer`；免导出直连本机 Anki（AnkiConnect），原图 + 比例矩形转 `.msk1` 并生成位置预览，同组多矩形按原顺序拆成独立遮罩（墨墨无同组同时揭示）。转换或预览不授权写卡；要写入墨墨仍需目标牌组/章节与凭证，且逐张回读后才算交付。
 - 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。细节见 [references/satellite-framework.md](references/satellite-framework.md) 与 [references/satellites.md](references/satellites.md)。
 - 安装、维护、测试技能本身不触发推荐或授权询问。
 - 维护本技能时用 [references/behavioral-evals.md](references/behavioral-evals.md) 检查初始化、凭证路由与实际制卡行为；脚本测试通过不等于这些场景或客户端渲染已验证。

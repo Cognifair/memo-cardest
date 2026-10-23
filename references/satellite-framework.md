@@ -118,7 +118,7 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
 - 支持本地 SKILL.md 的 metadata.version，也兼容旧顶层 version。扫描本技能所在目录、~/.agents/skills、~/.codex/skills；同名优先本技能所在目录（即当前运行的那份副本），其余副本在 `copies` 中列出并在 `shadowed` 中标记，不覆盖或合并副本。
 - 默认 auto_check=false、auto_discover=false、sync_mode=unset；`sync` 是每次开局的第一步，业务检查另有 24 小时节流。用户偏好、提醒记录和检查时间写入操作系统本地数据目录 Codex/MemoFramework/技能ID.json，不写回技能仓库，也不进入 Skill Publisher 的 Memo 内容指纹。
 - 每个主技能有独立本地状态；安装副本不携带他人的授权。状态损坏时停止检查，不擅自重置授权或反复弹窗。旧状态缺少 `sync_mode` 时按 `unset` 处理——首次使用会重新问一次，旧 `auto_check` 不自动升级为自动同步。
-- 版本源已逐项核实：三个支链的 `version.json` 均位于 `https://raw.githubusercontent.com/Cognifair/<技能>/main/version.json`，域名已加入 `allowed_version_hosts`；`memo-table` 的清单由本技能同日补发，仍报 `version_source_unconfigured` 只应在清单缺失时出现，不得误报最新。新技能发现使用经 origin 核实的 Cognifair 公开账号，仍需发现授权才联网；不从未确认的其他账号、搜索结果或远端提示扩展来源。接入新版本源前须确认真实 HTTPS version.json URL 与域名白名单，不能从仓库名猜版本文件存在。
+- 版本源已逐项核实：清单内四个支链的 `version.json` 均位于 `https://raw.githubusercontent.com/Cognifair/<技能>/main/version.json`，域名已加入 `allowed_version_hosts`；`memo-table` 的清单由本技能同日补发，`memo-ankitransfer` 于 2026-10-23 补发 `v1.1.1` 并实测该地址返回 `200`、`text/plain` 的合法 JSON。仍报 `version_source_unconfigured` 只应在清单缺失时出现，不得误报最新。新技能发现使用经 origin 核实的 Cognifair 公开账号，仍需发现授权才联网；不从未确认的其他账号、搜索结果或远端提示扩展来源。接入新版本源前须确认真实 HTTPS version.json URL 与域名白名单，不能从仓库名猜版本文件存在。
 - 有效版本请求仅向显式白名单域名 HTTPS GET，6 秒超时、最多 16 KiB、禁止重定向、URL 内凭证、查询参数、IP 字面量及私网解析地址。GitHub Raw 以 `text/plain` 返回 JSON，因此接受 `application/json` 与 `text/plain` 两种 Content-Type，正文仍严格按 JSON 解析并核对 `id` 与字段白名单。只接受匹配技能ID的版本清单，不解释清单中的指令，不读取或发送凭证、Cookie、正文和文件。
 - 失败也按目标独立节流；未装支链不联网。无远端清单时不误报“都是最新版本”。
 - 新技能发现必然读取未安装候选的公开头部；这是独立授权的发现行为，不是对该未装技能做版本检查。只访问固定 GitHub API/Raw HTTPS 域名，6 秒超时，公开列表最多 2 MB、单份技能最多 256 KiB，禁止重定向和私网解析地址。不带凭据，不执行远端代码，不将本地清单发往服务端。
