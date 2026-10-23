@@ -2,6 +2,13 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.1 — 2026-10-23
+
+### 变更
+
+- 支链展示名统一为「**迁墨 Memo-Ankitransfer**」（`memo-ankitransfer` 的正式展示名），同步到 `references/satellites.md` 的 `name` 字段、`SKILL.md` 支链段落与 `README.md` 支链表。
+- 支链 ID、`repository_url`、`version_url` 均未变，不影响已安装副本的同步与版本检查。
+
 ## v1.4.0 — 2026-10-23
 
 ### 新增
