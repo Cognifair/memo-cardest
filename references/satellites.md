@@ -56,7 +56,7 @@
     },
     {
       "id": "memo-ankitransfer",
-      "name": "Memo-Ankitransfer",
+      "name": "迁墨 Memo-Ankitransfer",
       "capability": "把 Anki 图片挖空卡的原图与矩形遮罩转成墨墨图片遮罩，免导出直连本机 Anki 并生成位置预览",
       "install_source": "github_public_repository",
       "repository_url": "https://github.com/Cognifair/memo-ankitransfer",
