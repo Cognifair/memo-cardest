@@ -165,3 +165,7 @@ python -B scripts/test_check_updates.py
 | [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) | Anki 图片挖空转墨墨原生遮罩 |
 | [Memo-QAhelper](https://github.com/Cognifair/memo-qahelper) | 墨墨记忆卡使用答疑（官方百科与论坛） |
 <!-- memo-series:end -->
+
+## License
+
+[MIT](LICENSE)
