@@ -26,27 +26,17 @@
 
 正常首次初始化保留开头三选一并等待选择。“不需要”表示长期关闭，用户主动改口前不再问。同步脚本不可用、状态损坏/被锁、读取或保存失败时，本次停同步、继续独立业务；不重置授权或反复弹窗。其余步骤按任务适用性处理，不把跳过或未验证的项目说成已完成。
 
-## 与其他 Memo 技能的分工
-
-| 技能 | 职责 |
-|---|---|
-| **Memo-Cardest** | 核心内容：学什么、怎么问、答案解释及正文语法 |
-| [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr)（可选，`$memo-mineruocr`） | 材料识别：首次选择本地非 MinerU OCR 或官网云端；大 PDF 拆分、识别并合并 Markdown 和图片 |
-| [Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | 文件容器：牌组信息、章节、分卡符与答案线 |
-| [Memo-Table](https://github.com/Cognifair/memo-table)（可选） | 表格图片或 LaTeX array 表格 |
-| [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer)（可选） | Anki 图片挖空迁移：免导出直连本机 Anki，原图 + 矩形遮罩转墨墨图片遮罩并预览 |
-
-支链均以 **GitHub 公开仓库**分发（链接见上表），**不上架平台技能市场**。
-
 ### 自动同步的安装方式：`git clone`
 
 自动同步需要 git 工作副本。用拷贝文件或解压 ZIP 的方式安装仍可制卡，但 `sync` 会返回 `skipped: not_a_git_checkout`。更新显式拉取清单的远端分支，核对技能身份/版本后快进合并，不依赖当前分支的 upstream。
 
 ```text
+git clone https://github.com/Cognifair/memo-cardest.git
 git clone https://github.com/Cognifair/memo-mineruocr.git
 git clone https://github.com/Cognifair/memo-table.git
 git clone https://github.com/Cognifair/memo-txtimporter.git
 git clone https://github.com/Cognifair/memo-ankitransfer.git
+git clone https://github.com/Cognifair/memo-qahelper.git
 ```
 
 克隆后用 `inventory` 确认每项都有 `.git`；`--depth 1` 的浅克隆不推荐，`pull` 偶尔需要完整历史。
@@ -163,3 +153,15 @@ python -B scripts/test_check_updates.py
 测试不访问真实远端版本源，也不写入使用者的授权状态；包含本地 Git 仓库集成测试，需要 Python 3 和 Git。测试包括错误 upstream、候选版本/身份不一致、分支分歧、失败分类与状态读写异常。
 
 维护后另按 [行为评测](references/behavioral-evals.md) 执行代表性用户场景，记录实际输出及未测项。离线测试通过不代表真实账户写入、TXT 导入或客户端渲染已验证。
+
+## Memo 系列
+
+<!-- memo-series:begin -->
+| 技能 | 职责 |
+|---|---|
+| [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) | 扫描件与大 PDF 识别、拆分并合并 Markdown |
+| [墨记表格制作 Memo-Table](https://github.com/Cognifair/memo-table) | 表格图片与 LaTeX array 表格渲染 |
+| [墨记文档导入 Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | TXT 容器格式、分卡校验与图片回填 |
+| [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) | Anki 图片挖空转墨墨原生遮罩 |
+| [Memo-QAhelper](https://github.com/Cognifair/memo-qahelper) | 墨墨记忆卡使用答疑（官方百科与论坛） |
+<!-- memo-series:end -->

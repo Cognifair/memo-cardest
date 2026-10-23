@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.2 — 2026-10-23
+
+### 修复
+
+- 修正 G2 的表格参考链接：`Cognifair/maimemo-table` → `Cognifair/memo-table`（旧仓库停更，会把人引到过期内容）。
+- README 安装清单补齐系列 6 个仓库，作为聚合安装入口。
+- README 的「Memo 系列」表与 `references/satellites.md` 改由 `memo-series.json` 生成（`sync-series`），不再手写跨技能清单。
+
 ## v1.4.1 — 2026-10-23
 
 ### 变更
