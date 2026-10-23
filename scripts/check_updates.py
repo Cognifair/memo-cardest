@@ -292,12 +292,12 @@ def inventory(cfg, roots):
             except (OSError, ValueError):
                 continue
             row["copies"].append({"path": str(path), "version": value,
-                                  "git_checkout": (path / ".git").is_dir()})
+                                  "git_checkout": (path / ".git").exists()})
             if row["installed"]:
                 row["shadowed"].append(str(path))
             else:
                 row.update(installed=True, local_version=value, path=str(path),
-                           git_checkout=(path / ".git").is_dir())
+                           git_checkout=(path / ".git").exists())
         row["version_source_configured"] = bool(row["version_url"])
         result.append(row)
     return result
@@ -328,7 +328,7 @@ def apply_update(row, target_version):
 def _apply_update(row, target_version):
     """Fast-forward one installed satellite from its verified public repository."""
     path = Path(row["path"]) if row.get("path") else None
-    if path is None or not path.is_dir() or not (path / ".git").is_dir():
+    if path is None or not path.is_dir() or not (path / ".git").exists():
         return {"id": row["id"], "result": "skipped", "reason": "not_a_git_checkout"}
     expected = row.get("repository_url")
     if not expected:

@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.4.3"
+  version: "1.4.4"
 ---
 
-# 墨卡大师 Memo-Cardest v1.4.3
+# 墨卡大师 Memo-Cardest v1.4.4
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -108,6 +108,7 @@ metadata:
 - 扫描件、文档图片、大 PDF 拆分 OCR → `memo-mineruocr`；首次使用先选「本地非 MinerU OCR」或「MinerUOCR 官网云端」，选后者才引导注册取 Token，上传范围单独授权，不从密钥或历史推断。OCR 成功不等于知识覆盖或语法验收；用户仅要求 OCR/转 Markdown 时直接交给该支链，不触发制卡会员询问。
 - TXT 容器 → `memo-txtimporter`；表格渲染 → `memo-table`。TXT 支链缺失时可依本地 txt-workflow 封装，但不得声称跑过专用校验；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
 - Anki 图片挖空迁移 → `memo-ankitransfer`（迁墨）；免导出直连本机 Anki（AnkiConnect），原图 + 比例矩形转 `.msk1` 并生成位置预览，同组多矩形按原顺序拆成独立遮罩（墨墨无同组同时揭示）。转换或预览不授权写卡；要写入墨墨仍需目标牌组/章节与凭证，且逐张回读后才算交付。
+- 调用支链时把本次已确认的路线、会员状态和 S0 结果一并交代，支链不再重复初始化或询问；支链返回后仍按 G4 验收。
 - 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。细节见 [references/satellite-framework.md](references/satellite-framework.md) 与 [references/satellites.md](references/satellites.md)。
 - 安装、维护、测试技能本身不触发推荐或授权询问。
 - 维护本技能时用 [references/behavioral-evals.md](references/behavioral-evals.md) 检查初始化、凭证路由与实际制卡行为；脚本测试通过不等于这些场景或客户端渲染已验证。

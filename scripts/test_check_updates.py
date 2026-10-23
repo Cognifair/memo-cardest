@@ -706,7 +706,7 @@ class ConfigValidationTests(unittest.TestCase):
     def test_published_config_file_is_valid(self):
         published = Path(__file__).resolve().parent.parent
         cfg = m.config(published)
-        self.assertEqual(cfg["skill_id"], "memo-cardest")
+        self.assertEqual(cfg["skill_id"], published.name)
         self.assertTrue(cfg["satellites"])
 
 
