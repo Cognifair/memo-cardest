@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.9 — 2026-10-25
+
+影响面：memo-cardest(SKILL.md, references/txt-workflow.md) / memo-txtimporter(SKILL.md, scripts/finalize_txt.py)
+
+### 修复
+
+- G4 明确 TXT 教程块必须是普通 Markdown，不得用代码块包住；否则 GIF 不会渲染。
+
 ## v1.4.8 — 2026-10-25
 
 影响面：memo-cardest(SKILL.md, references/txt-workflow.md) / memo-txtimporter(SKILL.md, scripts/finalize_txt.py)

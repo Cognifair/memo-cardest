@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.4.8"
+  version: "1.4.9"
 ---
 
-# 墨卡大师 Memo-Cardest v1.4.8
+# 墨卡大师 Memo-Cardest v1.4.9
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -99,7 +99,7 @@ metadata:
 按 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 逐条核对，回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API：每次写入后 GET 回读，逐字符比对正文、语法版本、章节归属与数量；写响应不确定先只读核查，禁止盲目重发。
 - 接口成功不等于渲染成功；TXT 生成不等于已导入。没在客户端确认过的写「待客户端预览 / 待导入」，只报告可证实的结果。
-- TXT：交付前由 `memo-txtimporter` 运行 `finalize_txt.py`；最终消息必须含脚本输出与 `交付自检：导入教程已附`，缺失就补；补不了标「未完成」，不得只写文字步骤。
+- TXT：交付前由 `memo-txtimporter` 运行 `finalize_txt.py`；最终消息必须含脚本输出与 `交付自检：导入教程已附`，且**教程块必须是普通 Markdown，不得用代码块包住**（否则 GIF 不会显示）；缺失就补，补不了标「未完成」，不得只写文字步骤。
 - 不把 API key、Cookie、会话 token 写进技能、输出文件、日志、Git、截图或示例。
 
 ## 支链与更新（按需，不阻塞主线）
