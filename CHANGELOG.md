@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.8 — 2026-10-25
+
+影响面：memo-cardest(SKILL.md, references/txt-workflow.md) / memo-txtimporter(SKILL.md, scripts/finalize_txt.py)
+
+### 变更
+
+- TXT 路线改为强制调用 `memo-txtimporter`：G0 选中 TXT 后立即调用该技能；删除 cardest 本地的容器格式副本、`import_guide.py` 和 GIF 资产，不再本地兜底。
+- G4 增加 TXT 交付自检：最终消息必须包含 `finalize_txt.py` 输出和 `交付自检：导入教程已附`。
+
 ## v1.4.7 — 2026-10-25
 
 影响面：memo-cardest(SKILL.md, references/txt-workflow.md, scripts/import_guide.py, references/assets/import-flow-36b59d.gif, references/assets/import-dialog-36b59d.png)

@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.4.7"
+  version: "1.4.8"
 ---
 
-# 墨卡大师 Memo-Cardest v1.4.7
+# 墨卡大师 Memo-Cardest v1.4.8
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -37,9 +37,9 @@ metadata:
 ## G0 交付路线、会员状态与凭证
 
 - **路线按 S0 的提问约束确认**（写卡/改卡前；用户已在本会话明确回答过、或明确说“只要 TXT/本地交付”时跳过）：
-  「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员）」
+  「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员；会调用 Memo-Txtimporter 生成容器、校验并附导入教程）」
   即使消息里提到“接入 API”，也要确认一次，不能靠关键词直接推断路线。
-- 选 TXT → TXT 路线，不询问会员、不读取账户凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
+- 选 TXT → **立即调用 `memo-txtimporter` 技能**（`skill` 工具，name=memo-txtimporter），由它负责容器、校验和交付教程；cardest 不本地封装 TXT。不询问会员、不读取账户凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
 - 选 API → API 路线。凭证顺序为 **用户本次明确指定的 key → 默认环境变量 `MAIMEMO_TOKEN`**；两者同时存在时用本次指定的 key，不静默覆盖环境变量。凭证来源或目标账户不清楚时先澄清，不猜账户。
 - API 路线没有本次指定凭证时，检查 `MAIMEMO_TOKEN` 是否存在并非空；不打印值。有凭证即视为已开通，真实权限仍由只读请求验证。
 - API 路线且没有可用凭证、也没有明确会员状态时，才问「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等回答；已有明确选择不重复问。历史连接成功、牌组数量不能单独作为依据。
@@ -54,7 +54,7 @@ metadata:
   - 若没有安全配置通道，说明未保存，由用户在系统环境变量界面自行设置；要询问时按 S0 的提问约束。
   - 无论选哪个，**不得把 key 写进技能文件、状态文件、日志、Git 或示例**。
 - API 路线读 [references/api-workflow.md](references/api-workflow.md)。本次凭证失败时不自动换用旧环境变量或其他账户；说明限制，请用户安全更新凭证或改走 TXT，不自动改走逆向 Web API。
-- TXT 路线读 [references/txt-workflow.md](references/txt-workflow.md)，并按需读 `memo-txtimporter/SKILL.md`；不索要密钥、不调账户 API、不替用户操作导入。**交付 TXT 时必须运行 `python -B scripts/import_guide.py`，把四步教程与动图附在交付消息末尾**，不要只写文字步骤。
+- TXT 路线按 [references/txt-workflow.md](references/txt-workflow.md) 交接给 `memo-txtimporter`，由它运行 `scripts/finalize_txt.py`；最终消息必须原样包含脚本输出（教程 + GIF + `交付自检：导入教程已附`）。未安装或调用失败：停止 TXT 交付并提示安装，不本地兜底。不索要密钥、不调账户 API、不替用户操作导入。
 - 确需补问且尚未回答时，等待回答；不得把已经明确的 TXT 请求送进会员询问。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
 
@@ -99,14 +99,14 @@ metadata:
 按 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 逐条核对，回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API：每次写入后 GET 回读，逐字符比对正文、语法版本、章节归属与数量；写响应不确定先只读核查，禁止盲目重发。
 - 接口成功不等于渲染成功；TXT 生成不等于已导入。没在客户端确认过的写「待客户端预览 / 待导入」，只报告可证实的结果。
-- 报告卡片数、牌组/章节、交付路径、实际做过的检查、仍需学习者完成的步骤。
+- TXT：交付前由 `memo-txtimporter` 运行 `finalize_txt.py`；最终消息必须含脚本输出与 `交付自检：导入教程已附`，缺失就补；补不了标「未完成」，不得只写文字步骤。
 - 不把 API key、Cookie、会话 token 写进技能、输出文件、日志、Git、截图或示例。
 
 ## 支链与更新（按需，不阻塞主线）
 
 核心业务不依赖支链；缺失时只说限制，不伪称已调用。新安装必须用户明确要求且来源已核实；既有支链更新按 S0 保存的授权执行。
 - 扫描件、文档图片、大 PDF 拆分 OCR → `memo-mineruocr`；首次使用先选「本地非 MinerU OCR」或「MinerUOCR 官网云端」，选后者才引导注册取 Token，上传范围单独授权，不从密钥或历史推断。OCR 成功不等于知识覆盖或语法验收；用户仅要求 OCR/转 Markdown 时直接交给该支链，不触发制卡会员询问。
-- TXT 容器 → `memo-txtimporter`；表格渲染 → `memo-table`。TXT 支链缺失时可依本地 txt-workflow 封装，但不得声称跑过专用校验；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
+- TXT 容器 → `memo-txtimporter`；**选 TXT 时强制调用，未安装就停止并提示安装，不本地兜底**。表格渲染 → `memo-table`；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
 - Anki 图片挖空迁移 → `memo-ankitransfer`（迁墨）；免导出直连本机 Anki（AnkiConnect），原图 + 比例矩形转 `.msk1` 并生成位置预览，同组多矩形按原顺序拆成独立遮罩（墨墨无同组同时揭示）。转换或预览不授权写卡；要写入墨墨仍需目标牌组/章节与凭证，且逐张回读后才算交付。
 - 调用支链时把本次已确认的路线、会员状态和 S0 结果一并交代，支链不再重复初始化或询问；支链返回后仍按 G4 验收。
 - 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。细节见 [references/satellite-framework.md](references/satellite-framework.md) 与 [references/satellites.md](references/satellites.md)。
