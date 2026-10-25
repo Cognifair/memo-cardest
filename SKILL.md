@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.4.6"
+  version: "1.4.7"
 ---
 
-# 墨卡大师 Memo-Cardest v1.4.6
+# 墨卡大师 Memo-Cardest v1.4.7
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -54,7 +54,7 @@ metadata:
   - 若没有安全配置通道，说明未保存，由用户在系统环境变量界面自行设置；要询问时按 S0 的提问约束。
   - 无论选哪个，**不得把 key 写进技能文件、状态文件、日志、Git 或示例**。
 - API 路线读 [references/api-workflow.md](references/api-workflow.md)。本次凭证失败时不自动换用旧环境变量或其他账户；说明限制，请用户安全更新凭证或改走 TXT，不自动改走逆向 Web API。
-- TXT 路线读 [references/txt-workflow.md](references/txt-workflow.md)，并按需读 `memo-txtimporter/SKILL.md`；不索要密钥、不调账户 API、不替用户操作导入。
+- TXT 路线读 [references/txt-workflow.md](references/txt-workflow.md)，并按需读 `memo-txtimporter/SKILL.md`；不索要密钥、不调账户 API、不替用户操作导入。**交付 TXT 时必须运行 `python -B scripts/import_guide.py`，把四步教程与动图附在交付消息末尾**，不要只写文字步骤。
 - 确需补问且尚未回答时，等待回答；不得把已经明确的 TXT 请求送进会员询问。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
 

@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.7 — 2026-10-25
+
+影响面：memo-cardest(SKILL.md, references/txt-workflow.md, scripts/import_guide.py, references/assets/import-flow-36b59d.gif, references/assets/import-dialog-36b59d.png)
+
+### 修复
+
+- TXT 交付必须附导入教程与动图：新增 `scripts/import_guide.py`，`references/txt-workflow.md` 与 `SKILL.md` 要求交付时运行并把四步 + GIF 绝对路径附在消息末尾，修复“只发文字步骤、没发动图”。
+
 ## v1.4.6 — 2026-10-24
 
 影响面：memo-cardest(SKILL.md)
