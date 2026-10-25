@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.4.9"
+  version: "1.4.10"
 ---
 
-# 墨卡大师 Memo-Cardest v1.4.9
+# 墨卡大师 Memo-Cardest v1.4.10
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -29,6 +29,7 @@ metadata:
   - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。
   - 返回 `off` → 一行带过，不追问、不重复问。
   - `partial` 或有 `failed` / `skipped` → 说明哪些没更新、为什么，继续业务；不自动修复安装或循环重试。
+  - 返回 `busy` → 另一个客户端/会话正在同步（状态锁被占用）：说明本次跳过同步，继续业务；不循环重试、不重置授权。
   - `error` → 按上面的异常分支继续业务。若包含 `sync_report`，保留其中已验证的更新结果，说明状态保存失败，重试前只读核对本地版本；不能声称本次完全没有更新。
   - `skipped: not_a_git_checkout` 说明该支链是复制安装、不是 git 工作副本：如实说明，给出 `git clone` 的安装方式，不得假装已同步。
 - 同步只覆盖清单里的支链：核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward；核对候选技能身份、目标版本及更新后的提交。工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过。主技能不在此检查范围，不自动覆盖自己。

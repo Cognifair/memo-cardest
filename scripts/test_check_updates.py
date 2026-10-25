@@ -3,6 +3,7 @@ import copy
 import importlib.util
 import json
 import io
+import os
 from contextlib import redirect_stdout
 from pathlib import Path
 import subprocess
@@ -214,9 +215,38 @@ class FrameworkTests(unittest.TestCase):
 
     def test_lock_excludes_concurrent_writer(self):
         with m.locked(self.base / "state.json"):
-            with self.assertRaises(OSError):
+            with self.assertRaises(m.LockBusy):
                 with m.locked(self.base / "state.json"):
                     self.fail("Second writer acquired lock")
+
+
+@unittest.skipUnless(os.name == "nt", "Windows byte-range locks")
+class LockTests(unittest.TestCase):
+    def test_lock_contention_reports_busy(self):
+        holder = (
+            "import msvcrt, sys, time\n"
+            "f = open(sys.argv[1], 'a+b')\n"
+            "if f.seek(0, 2) == 0:\n"
+            "    f.write(b'0'); f.flush()\n"
+            "f.seek(0)\n"
+            "msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)\n"
+            "print('locked', flush=True)\n"
+            "time.sleep(10)\n"
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            state = Path(temp) / "memo-cardest.json"
+            lock = state.with_suffix(".lock")
+            process = subprocess.Popen([sys.executable, "-c", holder, str(lock)],
+                                       stdout=subprocess.PIPE, text=True)
+            try:
+                self.assertEqual(process.stdout.readline().strip(), "locked")
+                with self.assertRaises(m.LockBusy):
+                    with m.locked(state):
+                        pass
+            finally:
+                process.terminate()
+                process.wait(timeout=5)
+                process.stdout.close()
 
 
 class GitUpdateTests(unittest.TestCase):
@@ -650,7 +680,8 @@ class CliLifecycleTests(unittest.TestCase):
         with m.locked(self.state_dir / "memo-cardest.json"), patch.object(m, "run_sync") as sync:
             code, result = self.main_sync()
         self.assertEqual(code, 1)
-        self.assertEqual(result["reason"], "state_lock_failed")
+        self.assertEqual(result["status"], "busy")
+        self.assertEqual(result["reason"], "sync_in_progress")
         sync.assert_not_called()
 
 

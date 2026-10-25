@@ -260,10 +260,12 @@ def locked(path):
     if lock.is_symlink():
         raise ValueError("Lock cannot be a symlink")
     with lock.open("a+b") as stream:
-        stream.seek(0)
         if os.name == "nt":
             import msvcrt
-            if not stream.read(1):
+            # Do not read the byte before locking: Windows byte locks are mandatory
+            # and a read of the locked byte fails with PermissionError.
+            if os.fstat(stream.fileno()).st_size < 1:
+                stream.seek(0)
                 stream.write(b"0")
                 stream.flush()
         deadline = time.monotonic() + LOCK_WAIT_SECONDS

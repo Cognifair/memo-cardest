@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.10 — 2026-10-26
+
+影响面：memo-cardest(SKILL.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py) / memo-txtimporter(SKILL.md, scripts/check_updates.py, scripts/test_check_updates.py)
+
+### 修复
+
+- 状态锁竞争不再误报 `state_lock_failed`：根因是加锁前读取被锁字节，Windows 强制字节锁直接抛 `PermissionError`。改为先用 `os.fstat` 判断文件大小，不读被锁区域。
+- 锁获取增加 2 秒退避重试；仍被占用时返回 `status: busy` / `reason: sync_in_progress`，说明“另一个客户端/会话正在同步”，业务继续。
+- 新增锁竞争回归测试；S0 与框架文档补充 `busy` 处理。
+
 ## v1.4.9 — 2026-10-25
 
 影响面：memo-cardest(SKILL.md, references/txt-workflow.md) / memo-txtimporter(SKILL.md, scripts/finalize_txt.py)
