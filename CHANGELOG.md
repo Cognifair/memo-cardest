@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.5.0 — 2026-10-28
+
+影响面：memo-cardest(SKILL.md, README.md, references/batch-delete.md)
+
+### 新增
+
+- 批量删除交接流程：官方 OpenAPI 只创建/复用 `DELETE` 章节并把目标卡移入，回读核对后由用户在客户端手动删除该章；AI 不调用删除接口，不做不可逆删除。
+
 ## v1.4.11 — 2026-10-28
 
 影响面：memo-cardest(references/satellite-framework.md)
