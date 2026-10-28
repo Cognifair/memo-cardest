@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.4.11 — 2026-10-28
+
+影响面：memo-cardest(references/satellite-framework.md)
+
+### 变更
+
+- 文档中的发布器名称由 `skill-publisher` 更新为 `maimemo-publisher`，与当前技能名保持一致。
+
 ## v1.4.10 — 2026-10-26
 
 影响面：memo-cardest(SKILL.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py) / memo-txtimporter(SKILL.md, scripts/check_updates.py, scripts/test_check_updates.py)
