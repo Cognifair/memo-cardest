@@ -1,5 +1,7 @@
 # 墨卡大师 Memo-Cardest
 
+> 🌐 [墨卡大师 · 专业制卡工作流](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB)
+
 墨墨记忆卡（Markji）的核心制卡技能：把学习材料拆解成明确、可主动回忆的卡片，负责知识组织、题型设计、卡片正文语法与学习排版。扫描件和大 PDF 可通过独立的 Memo-MinerUOCR 支链先识别、拆分解析并合并为 Markdown，再进入制卡流程。
 
 调用名：`$memo-cardest`。版本以 [SKILL.md](SKILL.md) 的 `metadata.version` 和 [version.json](version.json) 为准，变更记录见 [CHANGELOG.md](CHANGELOG.md)。

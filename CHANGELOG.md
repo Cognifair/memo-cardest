@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.5.1 — 2026-10-30
+
+影响面：memo-cardest(README.md)
+
+### 变更
+
+- README 顶部增加「墨卡大师 · 专业制卡工作流」在线介绍页链接。
+
 ## v1.5.0 — 2026-10-28
 
 影响面：memo-cardest(SKILL.md, README.md, references/batch-delete.md)
