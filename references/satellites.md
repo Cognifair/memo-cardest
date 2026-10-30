@@ -75,6 +75,16 @@
       "repository_branch": "main",
       "marketplace_listing": null,
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-qahelper/main/version.json"
+    },
+    {
+      "id": "memo-cardlink",
+      "name": "卡跳跳 Memo-CardLink",
+      "capability": "卡片单向跳转、双向互链与 Card 引用审计（原 Memo-Link）",
+      "install_source": "github_public_repository",
+      "repository_url": "https://github.com/Cognifair/memo-cardlink",
+      "repository_branch": "main",
+      "marketplace_listing": null,
+      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-cardlink/main/version.json"
     }
   ]
 }
