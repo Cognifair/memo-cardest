@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.5.2"
+  version: "1.5.3"
 ---
 
-# 墨卡大师 Memo-Cardest v1.5.2
+# 墨卡大师 Memo-Cardest v1.5.3
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -41,20 +41,20 @@ metadata:
   「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员；会调用 Memo-Txtimporter 生成容器、校验并附导入教程）」
   即使消息里提到“接入 API”，也要确认一次，不能靠关键词直接推断路线。
 - 选 TXT → **立即调用 `memo-txtimporter` 技能**（`skill` 工具，name=memo-txtimporter），由它负责容器、校验和交付教程；cardest 不本地封装 TXT。不询问会员、不读取账户凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
-- 选 API → API 路线。凭证顺序为 **用户本次明确指定的 key → 默认环境变量 `MAIMEMO_TOKEN`**；两者同时存在时用本次指定的 key，不静默覆盖环境变量。凭证来源或目标账户不清楚时先澄清，不猜账户。
-- API 路线没有本次指定凭证时，检查 `MAIMEMO_TOKEN` 是否存在并非空；不打印值。有凭证即视为已开通，真实权限仍由只读请求验证。
+- 选 API → API 路线。凭证顺序为 **用户本次明确指定的 key → `MAIMEMO_TOKEN`**；后者用 `scripts/secret_resolver.py` 解析（进程环境 → Windows 用户级环境变量 → `%LOCALAPPDATA%\MaimemoSecrets` → 工作区 `.memo-secrets`）。两者同时存在时用本次指定的 key，不静默覆盖。凭证来源或目标账户不清楚时先澄清，不猜账户。
+- API 路线没有本次指定凭证时，运行 `python -B scripts/secret_resolver.py MAIMEMO_TOKEN` 检查；只报“找到/未找到及来源”，不打印值。有凭证即视为已开通，真实权限仍由只读请求验证。
 - API 路线且没有可用凭证、也没有明确会员状态时，才问「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等回答；已有明确选择不重复问。历史连接成功、牌组数量不能单独作为依据。
-- API 路线留一行 `member: pro（本次指定凭证 / 环境变量 / 用户原话）`；明确未开通才报 `member: free（用户原话）`。
+- API 路线留一行 `member: pro（本次指定凭证 / 解析到的凭证 / 用户原话）`；明确未开通才报 `member: free（用户原话）`。
 - **只配置用户自己的 key**：不得把他人提供的、共享的、来源不明或疑似他人的 key 写入本机环境变量；来源存疑时先澄清使用权限，未澄清前不调用账户。只用本次会话也不能绕过这项确认。
 - **拿到 key 后，按 S0 的提问约束问一次是否存成用户环境变量**（仅当 key 来自本次输入且 `MAIMEMO_TOKEN` 还没设置）：
   「要把这个 key 设为用户环境变量 `MAIMEMO_TOKEN` 吗？**请确认这是你自己账户的 key**——写错或接错，后续所有请求都会操作别人的账户。以后就不用每次粘贴。」
   ① 是我自己的 key，设置到用户环境变量（仅本机、当前 Windows 用户生效）
   ② 不用，仅本次使用
-  - 选①：用 Windows 用户级环境变量写入，例如 `setx MAIMEMO_TOKEN "<key>"`（或用户级环境变量 API）；成功只报 `token_env: set`，失败说明原因并继续用本次的 key。写入会把 key 放进这条命令，若环境会记录命令历史，先提醒用户可以改由他本人在终端执行同一条命令；不要回显 key。用户级变量仅影响新进程。
+  - 选①：用 Windows 用户级环境变量写入，例如 `setx MAIMEMO_TOKEN "<key>"`（或用户级环境变量 API）；成功只报 `token_env: set`，失败说明原因并继续用本次的 key。写入会把 key 放进这条命令，若环境会记录命令历史，先提醒用户可以改由他本人在终端执行同一条命令；不要回显 key。用户级变量仅影响新进程，已运行的会话仍由 `secret_resolver.py` 读 User 级变量。
   - 选②：只在本次使用，不落盘，报 `token_env: session_only`。
   - 若没有安全配置通道，说明未保存，由用户在系统环境变量界面自行设置；要询问时按 S0 的提问约束。
   - 无论选哪个，**不得把 key 写进技能文件、状态文件、日志、Git 或示例**。
-- API 路线读 [references/api-workflow.md](references/api-workflow.md)。本次凭证失败时不自动换用旧环境变量或其他账户；说明限制，请用户安全更新凭证或改走 TXT，不自动改走逆向 Web API。
+- API 路线读 [references/api-workflow.md](references/api-workflow.md)；凭证读取与工作区沙箱见 [references/credentials.md](references/credentials.md)。本次凭证失败时不自动换用旧环境变量或其他账户；说明限制，请用户安全更新凭证或改走 TXT，不自动改走逆向 Web API。
 - TXT 路线按 [references/txt-workflow.md](references/txt-workflow.md) 交接给 `memo-txtimporter`，由它运行 `scripts/finalize_txt.py`；最终消息必须原样包含脚本输出（教程 + GIF + `交付自检：导入教程已附`）。未安装或调用失败：停止 TXT 交付并提示安装，不本地兜底。不索要密钥、不调账户 API、不替用户操作导入。
 - 确需补问且尚未回答时，等待回答；不得把已经明确的 TXT 请求送进会员询问。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
