@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.5.6 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md)
+
+### 变更
+
+- S0 首次同步选项明确区分：仅这次同步不安装自动更新；以后自动同步需要开启完全权限才能完成安装。
+- 没有完全权限时，S0 明确说明自动更新未安装，不假装已完成；安装后实际更新仍由沙箱外定时任务执行。
+
 ## v1.5.5 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py)
