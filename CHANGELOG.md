@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.5.5 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py)
+
+### 修复
+
+- 解决 workspace-write 下状态目录不可写被误报为“锁被占用”的问题：默认状态目录不可写时自动 fallback 到 `%TEMP%\MemoFramework`，并尽量复制原 `sync_mode` / `last_sync`。
+- 新增明确的 `error / state_dir_not_writable`；真实并发锁仍为 `busy / sync_in_progress`，两者不再混淆。
+- 支持 `--state-dir <workspace>\.memo-state` 作为显式工作区状态目录；不要求用户开完全权限。
+
 ## v1.5.4 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py)

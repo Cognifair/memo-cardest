@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import socket
 import subprocess
 import tempfile
@@ -26,6 +27,10 @@ LOCK_WAIT_SECONDS = 2.0
 
 class LockBusy(RuntimeError):
     """Another process is already syncing and holds the state lock."""
+
+
+class StateDirNotWritable(RuntimeError):
+    """The sandbox does not allow writing the state directory."""
 
 
 @total_ordering
@@ -200,6 +205,44 @@ def fetch_manifest(item, allowed_hosts):
     return data["version"]
 
 
+def _writable(directory):
+    try:
+        directory.mkdir(parents=True, exist_ok=True)
+        probe = directory / (".write-test-" + str(os.getpid()))
+        probe.write_text("", encoding="utf-8")
+        probe.unlink()
+        return True
+    except OSError:
+        return False
+
+
+def resolve_state_dir(explicit, skill_id):
+    """Prefer the shared state dir; fall back to TEMP when workspace sandbox blocks it."""
+    if explicit is not None:
+        if not _writable(explicit):
+            raise StateDirNotWritable(
+                "state-dir is not writable: " + str(explicit)
+                + ". Use --state-dir with a path inside the agent workspace.")
+        return explicit, "explicit"
+    candidates = [(DEFAULT_STATE, "default"),
+                  (Path(tempfile.gettempdir()) / "MemoFramework", "temp_fallback")]
+    primary = DEFAULT_STATE / (skill_id + ".json")
+    for directory, source in candidates:
+        if not _writable(directory):
+            continue
+        if source == "temp_fallback":
+            target = directory / (skill_id + ".json")
+            if not target.exists() and primary.is_file():
+                try:
+                    shutil.copyfile(primary, target)
+                except OSError:
+                    pass
+        return directory, source
+    raise StateDirNotWritable(
+        "No writable state directory. Checked: " + ", ".join(str(path) for path, _ in candidates)
+        + ". In workspace-write, pass --state-dir <workspace>/.memo-state.")
+
+
 def default_state():
     return {"schema": 1, "auto_check": False, "pitched": False, "asked_update": False,
             "declined": False, "first_task": None, "pitch_task": None,
@@ -253,13 +296,27 @@ def save_state(path, state):
             temporary.unlink()
 
 
+def _open_lock(lock):
+    try:
+        return lock.open("a+b")
+    except PermissionError as exc:
+        raise StateDirNotWritable(
+            "State directory is not writable: " + str(lock.parent)
+            + ". Pass --state-dir <workspace>/.memo-state or run without sandbox.") from exc
+
+
 @contextmanager
 def locked(path):
-    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except PermissionError as exc:
+        raise StateDirNotWritable(
+            "State directory is not writable: " + str(path.parent)
+            + ". Pass --state-dir <workspace>/.memo-state or run without sandbox.") from exc
     lock = path.with_suffix(".lock")
     if lock.is_symlink():
         raise ValueError("Lock cannot be a symlink")
-    with lock.open("a+b") as stream:
+    with _open_lock(lock) as stream:
         if os.name == "nt":
             import msvcrt
             # Do not read the byte before locking: Windows byte locks are mandatory
@@ -702,7 +759,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--skill-root", type=Path, default=Path(__file__).resolve().parent.parent)
     parser.add_argument("--root", type=Path, action="append", help="Explicit installed-skill search root; repeatable")
-    parser.add_argument("--state-dir", type=Path, default=DEFAULT_STATE)
+    parser.add_argument("--state-dir", type=Path, default=None)
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("inventory")
     sub.add_parser("status")
@@ -736,12 +793,15 @@ def main():
         roots = args.root or [args.skill_root.parent, Path.home() / ".agents/skills", Path.home() / ".codex/skills"]
         roots = list(dict.fromkeys(root.resolve() for root in roots))
         rows = inventory(cfg, roots)
-        state_path = args.state_dir / (cfg["skill_id"] + ".json")
+        state_dir, state_source = resolve_state_dir(args.state_dir, cfg["skill_id"])
+        state_path = state_dir / (cfg["skill_id"] + ".json")
         if args.action == "inventory":
             output = {"host": cfg["skill_id"], "satellites": rows}
         elif args.action == "status":
             stage = "state_read"
-            output = {"host": cfg["skill_id"], "state": read_state(state_path), "satellites": rows}
+            output = {"host": cfg["skill_id"], "state": read_state(state_path),
+                      "state_dir": str(state_dir), "state_source": state_source,
+                      "satellites": rows}
         else:
             stage = "state_lock"
             with locked(state_path):
@@ -822,6 +882,13 @@ def main():
                 save_state(state_path, state)
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return 0
+    except StateDirNotWritable as exc:
+        print(json.dumps({"status": "error", "reason": "state_dir_not_writable",
+                          "message": str(exc),
+                          "hint": "The sandbox blocked the state directory; this is not a lock conflict. "
+                                  "Use --state-dir <workspace>/.memo-state or run sync outside the sandbox."},
+                         ensure_ascii=False))
+        return 1
     except LockBusy as exc:
         print(json.dumps({"status": "busy", "reason": "sync_in_progress",
                           "message": str(exc),

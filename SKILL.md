@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.5.4"
+  version: "1.5.5"
 ---
 
-# 墨卡大师 Memo-Cardest v1.5.4
+# 墨卡大师 Memo-Cardest v1.5.5
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -23,6 +23,7 @@ metadata:
   - 提问时说明第三项“不需要”会长期关闭同步，可随时主动重新开启；用户主动改口前不再询问。
   - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API，不能因为“只是改一张卡”跳过。
   - 脚本不可运行、状态损坏/被锁、授权不能读取或保存：报 `sync: unavailable · <原因>`，本次不同步、不反复询问或重置授权，继续独立可完成的制卡。状态无法保存时不承诺“已记住选择”；用户已作的选择仅在本次对话中记住，恢复后持久化仍需有明确依据。初始化可正常工作但用户尚未回答，不属于此异常分支。
+  - 返回 `state_dir_not_writable`：这是沙箱不允许写状态目录，**不是**另一个进程抢锁。脚本会先尝试 `%TEMP%\MemoFramework` 自动 fallback；仍失败时用 `--state-dir <workspace>/.memo-state` 重试一次，或报 `sync: unavailable · state_dir_not_writable` 后继续制卡，不要求用户开完全权限。
   - **已经动手才发现漏了 S0**：立刻停下，说明漏了一步，补跑 `sync` 并按结果询问，然后继续；不得隐瞒或假装做过。
 - **每次任务**：先跑 `python scripts/check_updates.py sync`。
   - 返回 `needs_consent` → 就是首次使用，问上面那一问，不得跳过。

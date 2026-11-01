@@ -249,6 +249,28 @@ class LockTests(unittest.TestCase):
                 process.stdout.close()
 
 
+class StateDirTests(unittest.TestCase):
+    def test_falls_back_to_temp_when_primary_is_not_writable(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                patch.object(m, "_writable", side_effect=[False, True]), \
+                patch.object(m.tempfile, "gettempdir", return_value=tmp):
+            directory, source = m.resolve_state_dir(None, "memo-cardest")
+        self.assertEqual(source, "temp_fallback")
+        self.assertEqual(directory, Path(tmp) / "MemoFramework")
+
+    def test_explicit_unwritable_directory_is_an_error(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(m, "_writable", return_value=False):
+            with self.assertRaises(m.StateDirNotWritable):
+                m.resolve_state_dir(Path(tmp) / "state", "memo-cardest")
+
+    def test_lock_permission_error_is_not_reported_as_busy(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(
+                m, "_open_lock", side_effect=m.StateDirNotWritable("not writable")):
+            with self.assertRaises(m.StateDirNotWritable):
+                with m.locked(Path(tmp) / "state.json"):
+                    pass
+
+
 class GitUpdateTests(unittest.TestCase):
     """Real local repositories; only the verified remote's fetch is mapped to a fixture."""
 
