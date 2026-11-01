@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.7.0"
+  version: "1.7.1"
 ---
 
-# 墨卡大师 Memo-Cardest v1.7.0
+# 墨卡大师 Memo-Cardest v1.7.1
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -21,7 +21,7 @@ metadata:
   - **所有需要用户选择的地方，统一用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）；不得只在正文写一句问题就结束回合，更不得直接终止对话；用户未回答则不推进。确实没有可用控件时才退回文字，并明确写「等你选择后继续」。
   - 用户没选就不推进：不生成卡片、不调用 API、不继续任何后续步骤。
   - 提问时说明第三项“不需要”会长期关闭同步，可随时主动重新开启；用户主动改口前不再询问。
-  - 选②时先确认当前客户端具备**完全权限**；没有则明确说“自动更新的安装需要完全权限”，不要声称已安装；用户可改选①或手动同步。有权限时：Windows 运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\install_sync_task.ps1`，macOS 运行 `sh scripts/macos/install_sync_agent.sh`；按退出码报告成功/失败，失败不得假装已安装。安装完成后，实际更新由沙箱外定时任务执行，S0 仍只负责检查。细节见 [references/auto-update.md](references/auto-update.md)。
+  - 选②时，在安装前读取 [references/auto-update.md](references/auto-update.md)，按其中的平台命令和权限前提执行；权限不足或安装失败必须报告“自动更新未安装”，可改选①或手动同步。当前 `sync` 在授权后仍可能更新主技能和支链，不是只读检查；后台任务是另一执行入口，安装不能把 S0 变成只读。
   - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API，不能因为“只是改一张卡”跳过。
   - 脚本不可运行、状态损坏/被锁、授权不能读取或保存：报 `sync: unavailable · <原因>`，本次不同步、不反复询问或重置授权，继续独立可完成的制卡。状态无法保存时不承诺“已记住选择”；用户已作的选择仅在本次对话中记住，恢复后持久化仍需有明确依据。初始化可正常工作但用户尚未回答，不属于此异常分支。
   - 返回 `state_dir_not_writable`：这是沙箱不允许写状态目录，**不是**另一个进程抢锁。脚本会先尝试 `%TEMP%\MemoFramework` 自动 fallback；仍失败时用 `--state-dir <workspace>/.memo-state` 重试一次，或报 `sync: unavailable · state_dir_not_writable` 后继续制卡，不要求用户开完全权限。
@@ -43,22 +43,10 @@ metadata:
 - **路线按 S0 的提问约束确认**（写卡/改卡前；用户已在本会话明确回答过、或明确说“只要 TXT/本地交付”时跳过）：
   「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员；会调用 Memo-Txtimporter 生成容器、校验并附导入教程）」
   即使消息里提到“接入 API”，也要确认一次，不能靠关键词直接推断路线。
-- 选 TXT → **立即调用 `memo-txtimporter` 技能**（`skill` 工具，name=memo-txtimporter），由它负责容器、校验和交付教程；cardest 不本地封装 TXT。不询问会员、不读取账户凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
-- 选 API → API 路线。凭证顺序为 **用户本次明确指定的 key → `MAIMEMO_TOKEN`**；后者用 `scripts/secret_resolver.py` 解析（进程环境 → Windows 用户级环境变量 → `%LOCALAPPDATA%\MaimemoSecrets` → 工作区 `.memo-secrets`）。两者同时存在时用本次指定的 key，不静默覆盖。凭证来源或目标账户不清楚时先澄清，不猜账户。
-- API 路线没有本次指定凭证时，运行 `python -B scripts/secret_resolver.py MAIMEMO_TOKEN` 检查；只报“找到/未找到及来源”，不打印值。有凭证即视为已开通，真实权限仍由只读请求验证。
-- API 路线且没有可用凭证、也没有明确会员状态时，才问「学习者的墨墨记忆卡账户已开通专业版，还是未开通？」，等回答；已有明确选择不重复问。历史连接成功、牌组数量不能单独作为依据。
-- API 路线留一行 `member: pro（本次指定凭证 / 解析到的凭证 / 用户原话）`；明确未开通才报 `member: free（用户原话）`。
-- **只配置用户自己的 key**：不得把他人提供的、共享的、来源不明或疑似他人的 key 写入本机环境变量；来源存疑时先澄清使用权限，未澄清前不调用账户。只用本次会话也不能绕过这项确认。
-- **拿到 key 后，按 S0 的提问约束问一次是否存成用户环境变量**（仅当 key 来自本次输入且 `MAIMEMO_TOKEN` 还没设置）：
-  「要把这个 key 设为用户环境变量 `MAIMEMO_TOKEN` 吗？**请确认这是你自己账户的 key**——写错或接错，后续所有请求都会操作别人的账户。以后就不用每次粘贴。」
-  ① 是我自己的 key，设置到用户环境变量（仅本机、当前 Windows 用户生效）
-  ② 不用，仅本次使用
-  - 选①：用 Windows 用户级环境变量写入，例如 `setx MAIMEMO_TOKEN "<key>"`（或用户级环境变量 API）；成功只报 `token_env: set`，失败说明原因并继续用本次的 key。写入会把 key 放进这条命令，若环境会记录命令历史，先提醒用户可以改由他本人在终端执行同一条命令；不要回显 key。用户级变量仅影响新进程，已运行的会话仍由 `secret_resolver.py` 读 User 级变量。
-  - 选②：只在本次使用，不落盘，报 `token_env: session_only`。
-  - 若没有安全配置通道，说明未保存，由用户在系统环境变量界面自行设置；要询问时按 S0 的提问约束。
-  - 无论选哪个，**不得把 key 写进技能文件、状态文件、日志、Git 或示例**。
-- API 路线读 [references/api-workflow.md](references/api-workflow.md)；凭证读取与工作区沙箱见 [references/credentials.md](references/credentials.md)。本次凭证失败时不自动换用旧环境变量或其他账户；说明限制，请用户安全更新凭证或改走 TXT，不自动改走逆向 Web API。
-- TXT 路线按 [references/txt-workflow.md](references/txt-workflow.md) 交接给 `memo-txtimporter`，由它运行 `scripts/finalize_txt.py`；最终消息必须原样包含脚本输出（教程 + GIF + `交付自检：导入教程已附`）。未安装或调用失败：停止 TXT 交付并提示安装，不本地兜底。不索要密钥、不调账户 API、不替用户操作导入。
+- 选 TXT → **立即读取 [references/txt-workflow.md](references/txt-workflow.md) 并调用 `memo-txtimporter`**，由它负责容器、校验和教程；未安装或调用失败则停止 TXT 交付，不本地兜底。不询问会员、不读取凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
+- 选 API → **读取凭证前先完整读 [references/credentials.md](references/credentials.md)**，按其中的来源顺序、会员判断与保存询问执行；只有用户本次未指定 key 时才用 `scripts/secret_resolver.py` 查默认凭证。
+- **本次指定凭证优先，不静默覆盖或在失败后切换账户；来源或使用权限不明先澄清。** 只配置用户自己的 key，未经明确同意不持久化；不把凭证写进技能、状态、日志或 Git。
+- API 请求前读取 [references/api-workflow.md](references/api-workflow.md)，按实时文档只读验证权限。凭证失败时停止该账户写入，请用户更新凭证或选择 TXT，不自动改走逆向 Web API；会员状态只按凭证说明的依据报告，不重复询问已明确的信息。
 - 确需补问且尚未回答时，等待回答；不得把已经明确的 TXT 请求送进会员询问。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
 
@@ -116,7 +104,7 @@ metadata:
 按 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 逐条核对，回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API：每次写入后 GET 回读，逐字符比对正文、语法版本、章节归属与数量；写响应不确定先只读核查，禁止盲目重发。
 - 接口成功不等于渲染成功；TXT 生成不等于已导入。没在客户端确认过的写「待客户端预览 / 待导入」，只报告可证实的结果。
-- TXT：交付前由 `memo-txtimporter` 运行 `finalize_txt.py`；最终消息必须含脚本输出与 `交付自检：导入教程已附`，且**教程块必须是普通 Markdown，不得用代码块包住**（否则 GIF 不会显示）；缺失就补，补不了标「未完成」，不得只写文字步骤。
+- TXT：交付前按已读的 TXT 交接说明，由 `memo-txtimporter` 运行 `finalize_txt.py` 并交付其输出；教程呈现、省略条件及缺失处理只在该引用维护，未校验不得声称完成。
 - 不把 API key、Cookie、会话 token 写进技能、输出文件、日志、Git、截图或示例。
 
 ## 批量删除（DELETE 章交接）
@@ -137,7 +125,7 @@ AI 只负责“移到可恢复的 DELETE 章”，不执行不可逆删除。完
 
 核心业务不依赖支链；缺失时只说限制，不伪称已调用。新安装必须用户明确要求且来源已核实；既有支链更新按 S0 保存的授权执行。
 - 扫描件、文档图片、大 PDF 拆分 OCR → `memo-mineruocr`；首次使用先选「本地非 MinerU OCR」或「MinerUOCR 官网云端」，选后者才引导注册取 Token，上传范围单独授权，不从密钥或历史推断。OCR 成功不等于知识覆盖或语法验收；用户仅要求 OCR/转 Markdown 时直接交给该支链，不触发制卡会员询问。
-- TXT 容器 → `memo-txtimporter`；**选 TXT 时强制调用，未安装就停止并提示安装，不本地兜底**。表格渲染 → `memo-table`；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
+- TXT 容器 → `memo-txtimporter`，触发与交付边界统一按 G0/G4。表格渲染 → `memo-table`；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
 - Anki 图片挖空迁移 → `memo-ankitransfer`（迁墨）；免导出直连本机 Anki（AnkiConnect），原图 + 比例矩形转 `.msk1` 并生成位置预览，同组多矩形按原顺序拆成独立遮罩（墨墨无同组同时揭示）。转换或预览不授权写卡；要写入墨墨仍需目标牌组/章节与凭证，且逐张回读后才算交付。
 - 调用支链时把本次已确认的路线、会员状态和 S0 结果一并交代，支链不再重复初始化或询问；支链返回后仍按 G4 验收。
 - 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。细节见 [references/satellite-framework.md](references/satellite-framework.md) 与 [references/satellites.md](references/satellites.md)。

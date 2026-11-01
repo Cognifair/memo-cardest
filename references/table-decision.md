@@ -40,7 +40,7 @@
 - **只要发现表格，就必须先拉起 `memo-table`**，不能以“表格很简单”“我直接写文字”“最后再处理”跳过；
 - 即使打算用 LaTeX 表格，也先让 `memo-table` 给建议/生成，不在主技能里临时手写；
 - 表格是图片/扫描件时，先确认 OCR 或原图能读；读不清就问用户，不猜单元格；
-- 用户明确说“不要用 memo-table / 用 LaTeX 就行”时遵从，但记录 `tables: user-skip`，不得静默跳过；
+- 只有用户明确说“不要用 memo-table”或同义要求时才跳过，并记录 `tables: user-skip`；仅指定 LaTeX/三线表不等于禁止该技能，它本来就支持 LaTeX；
 - `memo-table` 未安装或调用失败：说明缺失，表格卡标“待处理”，不要假装已生成；可继续非表格卡。
 
 ## 留痕
@@ -50,7 +50,7 @@
 ```text
 tables: found(2) → memo-table invoked
 tables: none
-tables: user-skip（用户指定 LaTeX）
+tables: user-skip（用户明确要求不用 memo-table）
 ```
 
 G4 验收时检查：

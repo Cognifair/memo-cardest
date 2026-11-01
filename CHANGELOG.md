@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.7.1 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, CHANGELOG.md, version.json, agents/openai.yaml, references/api-workflow.md, references/auto-update.md, references/behavioral-evals.md, references/credentials.md, references/satellite-framework.md, references/table-decision.md, references/tables.md, references/txt-workflow.md)
+
+### 优化
+
+- 将凭证处理、TXT 交付及平台更新安装细节集中到现有 reference，主入口保留触发条件、安全边界和必读引用，减少重复说明。
+- 统一启动同步、API 路线确认、密钥保存授权及表格技能缺失时的处理规则；不改变核心制卡质量关卡及批量删除边界。
+- 不修改运行时脚本；67 项离线测试通过，两组各 20 个模拟决策场景均通过，未观察到核心需求回归（非真实 API 测试）。
+
 ## v1.7.0 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/table-decision.md, references/behavioral-evals.md)
