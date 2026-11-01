@@ -2,6 +2,19 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.7.0 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/table-decision.md, references/behavioral-evals.md)
+
+### 新增
+
+- G1.5 开局表格审查：材料或待改卡片正文中出现真实表格时，强制调用 `memo-table`，不再让模型自行手写或跳过。
+- 增加 `tables: found(N) → memo-table invoked` / `tables: none` / `tables: user-skip` 留痕，并补充场景 N 行为评测。
+
+### 修复
+
+- 修正常见漏触发：模型看到表格但按普通文本直接制卡。
+
 ## v1.6.0 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/auto-update.md, scripts/windows/, scripts/macos/)
