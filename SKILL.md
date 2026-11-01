@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.7.1"
+  version: "1.7.2"
 ---
 
-# 墨卡大师 Memo-Cardest v1.7.1
+# 墨卡大师 Memo-Cardest v1.7.2
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -109,17 +109,9 @@ metadata:
 
 ## 批量删除（DELETE 章交接）
 
-用户要删除大量卡片时，**不要调用删除卡片/章节接口，也不要改正文模拟删除**：
+处理批量删除请求前，**先完整读取 [references/batch-delete.md](references/batch-delete.md)**，再读取/匹配目标或准备移动；精确匹配、建章、分组移动、回读核对与交接步骤只在该引用维护，仍须遵守 S0/G0 与适用文档核对要求。
 
-1. 读目标牌组的章节与 `card_ids`；
-2. 按用户给出的 card_id，或用卡片标题做**精确**匹配；匹配不到、同标题多张、无法确认时停下来问；
-3. 列出“目标卡 + 来源章节 + 数量”的预览，等用户确认“AI 移入 DELETE 章，最后由我手动删除该章”；
-4. 创建或复用名为 `DELETE` 的章节；已存在多个则停止；
-5. 按来源章节分组调用 `POST /api/v1/markji/decks/{deck}/chapters/{source}/cards/move`，把卡移入 DELETE；每批后回读；
-6. 核对 DELETE 卡数、牌组总卡数、来源章节减少量；失败项逐条报告，不重复盲发；
-7. 交接：请用户在 Markji 客户端**手动删除 DELETE 章节**，删章会删除其中卡片；用户删除后可再读一次确认总卡数减少、DELETE 消失。
-
-AI 只负责“移到可恢复的 DELETE 章”，不执行不可逆删除。完整接口、匹配规则、幂等和边界见 [references/batch-delete.md](references/batch-delete.md)。
+**禁止调用删除卡片/章节接口或改正文模拟删除。** 先展示“目标卡 + 来源章节 + 数量”的预览，取得用户确认后，只把已确认范围移入 `DELETE` 章；匹配有歧义就停止澄清。最后由用户在客户端手动删除该章，AI 不执行不可逆删除。
 
 ## 支链与更新（按需，不阻塞主线）
 

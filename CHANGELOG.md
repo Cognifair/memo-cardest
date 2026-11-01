@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.7.2 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, references/batch-delete.md, CHANGELOG.md, version.json, agents/openai.yaml)
+
+### 优化
+
+- 将主入口重复的批量删除操作步骤集中到现有 `references/batch-delete.md`，明确处理前完整阅读；原有匹配、确认、建章、移动、回读及交接流程保持不变。
+- 主入口保留禁止不可逆删除、预览确认、仅移动已确认范围及由用户手动删章的安全边界；不修改运行时脚本、授权或后台任务。
+- 67 项离线测试、四份本地副本的结构与引用完整性检查通过；未执行真实账户操作或客户端渲染验收。
+
 ## v1.7.1 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, CHANGELOG.md, version.json, agents/openai.yaml, references/api-workflow.md, references/auto-update.md, references/behavioral-evals.md, references/credentials.md, references/satellite-framework.md, references/table-decision.md, references/tables.md, references/txt-workflow.md)
