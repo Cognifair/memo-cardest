@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.5.3"
+  version: "1.5.4"
 ---
 
-# 墨卡大师 Memo-Cardest v1.5.3
+# 墨卡大师 Memo-Cardest v1.5.4
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -15,7 +15,7 @@ metadata:
 
 ## S0 启动同步（每次任务第一件事，早于 G0）
 
-先读取同步状态，正常首次使用完成一次初始化选择，再做业务。回复里留一行：`sync: <模式> · <结果>`。脚本命令均相对本技能目录执行，避免把用户工作目录误当技能目录。
+先读取同步状态，正常首次使用完成一次初始化选择，再做业务。回复里留一行：`sync: <模式> · <host 结果> · <支链结果>`。脚本命令均相对本技能目录执行，避免把用户工作目录误当技能目录。
 
 - **首次使用**（本机 `sync_mode` 为 `unset`）：先问「要不要开启技能自动同步？① 仅这次同步 ② 以后自动帮我同步 ③ 不需要」，等回答；按选择执行 `python scripts/check_updates.py sync-consent once|auto|off`，再跑 `sync`。
   - **所有需要用户选择的地方，统一用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）；不得只在正文写一句问题就结束回合，更不得直接终止对话；用户未回答则不推进。确实没有可用控件时才退回文字，并明确写「等你选择后继续」。
@@ -27,12 +27,13 @@ metadata:
 - **每次任务**：先跑 `python scripts/check_updates.py sync`。
   - 返回 `needs_consent` → 就是首次使用，问上面那一问，不得跳过。
   - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。
+  - 返回 `host.result=updated` → 报「主链已从 X 更新到 Y」并**暂停业务**，请用户重启客户端或新开会话；当前会话仍加载旧 SKILL，不能继续用新旧混合状态。`host.result=up_to_date` 一行带过；`host.skipped` / `host.failed` 说明原因，继续旧版本业务。
   - 返回 `off` → 一行带过，不追问、不重复问。
   - `partial` 或有 `failed` / `skipped` → 说明哪些没更新、为什么，继续业务；不自动修复安装或循环重试。
   - 返回 `busy` → 另一个客户端/会话正在同步（状态锁被占用）：说明本次跳过同步，继续业务；不循环重试、不重置授权。
   - `error` → 按上面的异常分支继续业务。若包含 `sync_report`，保留其中已验证的更新结果，说明状态保存失败，重试前只读核对本地版本；不能声称本次完全没有更新。
   - `skipped: not_a_git_checkout` 说明该支链是复制安装、不是 git 工作副本：如实说明，给出 `git clone` 的安装方式，不得假装已同步。
-- 同步只覆盖清单里的支链：核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward；核对候选技能身份、目标版本及更新后的提交。工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过。主技能不在此检查范围，不自动覆盖自己。
+- 同步覆盖**当前主技能自身**和清单里的支链：主技能仅在 git 工作副本、工作区干净、`main` 分支、GitHub HTTPS origin 且可 fast-forward 时更新；支链核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward。核对候选技能身份、目标版本及更新后的提交；工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过，不覆盖本地改动。旧版本若还没有 host 自更新逻辑，需要先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
 - 业务任务必须继续：同步失败或跳过不影响制卡，但报告里要写清楚。
 
 ## G0 交付路线、会员状态与凭证

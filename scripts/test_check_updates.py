@@ -332,6 +332,26 @@ class GitUpdateTests(unittest.TestCase):
         self.assertEqual(result["reason"], "update_verification_failed")
         self.assertTrue(result["needs_verification"])
 
+    def test_host_fast_forwards_itself(self):
+        result = m.update_host(self.checkout)
+        self.assertEqual(result["result"], "updated")
+        self.assertEqual(result["from"], "1.0.0")
+        self.assertEqual(result["version"], "1.1.0")
+        self.assertEqual(m.skill_metadata(self.checkout / "SKILL.md"), ("memo-test", "1.1.0"))
+        self.assertEqual(result["commit"], self.git(self.source, "rev-parse", "HEAD"))
+
+    def test_host_dirty_worktree_is_not_updated(self):
+        (self.checkout / "SKILL.md").write_text("local edit\n", encoding="utf-8")
+        before = self.git(self.checkout, "rev-parse", "HEAD")
+        result = m.update_host(self.checkout)
+        self.assertEqual(result["reason"], "dirty_worktree")
+        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD"), before)
+
+    def test_host_without_git_is_skipped(self):
+        plain = self.base / "plain"
+        plain.mkdir()
+        self.assertEqual(m.update_host(plain)["reason"], "not_a_git_checkout")
+
 
 class DiscoveryTests(unittest.TestCase):
     def setUp(self):
@@ -663,7 +683,7 @@ class CliLifecycleTests(unittest.TestCase):
                 raise PermissionError()
             real_save(path, state)
 
-        def sync(*_):
+        def sync(*_, **__):
             persisted = m.read_state(self.state_dir / "memo-cardest.json")
             self.assertFalse(persisted["sync_pending_once"])
             return report

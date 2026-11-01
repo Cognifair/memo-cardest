@@ -71,7 +71,8 @@ inventory/status 只读，不创建状态，不联网。安装、维护、审查
 
 - 只同步清单内的支链：核对 `origin` 的唯一有效 URL 与 `repository_url`，当前分支须为 `repository_branch`（缺省 `main`）。显式 `fetch --no-tags origin refs/heads/<branch>`，检查候选 `SKILL.md` 的名称和版本与版本清单一致，再 `merge --ff-only <已核验提交>`，最后核对本地身份、版本与 HEAD。当前分支配置的其他 upstream 不参与选择。
 - 工作区不干净、远端/当前分支不符、不是 git 仓库、不能快进 → 跳过并说明原因，不覆盖本地改动。拉取、合并或核验失败进 `failed`；超时/读回失败需先核查，不能盲目重试或宣称已更新。
-- 主技能不在此检查范围，也不自动更新；主技能更新由用户明确要求的维护流程处理。
+- 当前主技能自身（host）也在检查范围：仅当它是 git 工作副本、工作区干净、在 `main`、origin 为 GitHub HTTPS 且可 fast-forward 时更新；核对候选与最终 `SKILL.md` 的身份/版本/HEAD。host 更新后当前会话暂停，重启/新会话生效；非 git、脏工作区、分支/远端不符一律跳过。
+- 旧版本若还没有 host 自更新逻辑，需要先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
 - 同步失败或跳过不阻塞业务，但必须在报告里写清楚。
 
 缺失能力介绍仍用 `complete`，它不再负责询问更新授权：

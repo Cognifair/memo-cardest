@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.5.4 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/satellite-framework.md, scripts/check_updates.py, scripts/test_check_updates.py)
+
+### 修复
+
+- 解决主链不能自动同步的问题：S0 同步现在会检查当前主技能仓库；仅在 git 工作副本、工作区干净、`main` 分支、GitHub HTTPS origin 且目标可 fast-forward 时更新。
+- 主链更新后当前会话暂停，提示重启/新会话；当前会话不继续用旧 SKILL 混杂新脚本。
+- 旧版本没有 host 自更新逻辑，需要先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
+
 ## v1.5.3 — 2026-10-31
 
 影响面：memo-cardest(SKILL.md, scripts/secret_resolver.py, scripts/test_secret_resolver.py, references/credentials.md)

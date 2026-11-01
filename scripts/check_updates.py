@@ -394,7 +394,72 @@ def _apply_update(row, target_version):
     return {"id": row["id"], "result": "updated", "version": version, "commit": commit}
 
 
-def run_sync(cfg, rows, state, now=None, fetcher=None):
+def update_host(host_root):
+    """Fast-forward the installed host skill itself from its verified GitHub origin."""
+    root = Path(host_root)
+    if not (root / ".git").exists():
+        return {"id": "host", "result": "skipped", "reason": "not_a_git_checkout"}
+    code, origin, _ = run_git(root, "remote", "get-url", "origin")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "origin_unavailable"}
+    try:
+        validate_repository_url(origin)
+    except ValueError:
+        return {"id": "host", "result": "skipped", "reason": "remote_not_github"}
+    code, status, _ = run_git(root, "status", "--porcelain")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "git_status_failed"}
+    if status:
+        return {"id": "host", "result": "skipped", "reason": "dirty_worktree"}
+    code, branch, _ = run_git(root, "symbolic-ref", "--quiet", "--short", "HEAD")
+    if code != 0 or branch != "main":
+        return {"id": "host", "result": "skipped", "reason": "branch_mismatch"}
+    try:
+        identity, current_version = skill_metadata(root / "SKILL.md")
+    except (OSError, ValueError):
+        return {"id": "host", "result": "failed", "reason": "local_metadata_invalid"}
+    code, _, _ = run_git(root, "fetch", "--no-tags", "origin", "refs/heads/main")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "fetch_failed"}
+    code, target, _ = run_git(root, "rev-parse", "--verify", "FETCH_HEAD^{commit}")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "fetch_head_invalid"}
+    code, head, _ = run_git(root, "rev-parse", "HEAD")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "head_invalid"}
+    if head == target:
+        return {"id": "host", "result": "up_to_date", "version": current_version}
+    code, document, _ = run_git(root, "show", target + ":SKILL.md")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "target_metadata_unavailable"}
+    try:
+        target_identity, target_version = skill_metadata_text(document)
+    except ValueError:
+        return {"id": "host", "result": "failed", "reason": "target_metadata_invalid"}
+    if target_identity != identity:
+        return {"id": "host", "result": "failed", "reason": "target_identity_mismatch"}
+    if Version(target_version) <= Version(current_version):
+        return {"id": "host", "result": "skipped", "reason": "version_not_newer"}
+    code, _, _ = run_git(root, "merge-base", "--is-ancestor", "HEAD", target)
+    if code != 0:
+        return {"id": "host", "result": "skipped", "reason": "not_fast_forward"}
+    code, _, _ = run_git(root, "merge", "--ff-only", target)
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "merge_failed", "needs_verification": True}
+    try:
+        final_identity, final_version = skill_metadata(root / "SKILL.md")
+    except (OSError, ValueError):
+        final_identity, final_version = None, None
+    code, final_head, _ = run_git(root, "rev-parse", "HEAD")
+    if (code != 0 or final_head != target or final_identity != identity
+            or final_version != target_version):
+        return {"id": "host", "result": "failed", "reason": "update_verification_failed",
+                "needs_verification": True}
+    return {"id": "host", "result": "updated", "from": current_version,
+            "version": target_version, "commit": target}
+
+
+def run_sync(cfg, rows, state, now=None, fetcher=None, host_root=None, host_updater=None):
     """Startup sync: authorized by the one-time prompt, never by silence."""
     mode = state.get("sync_mode", "unset")
     report = {"status": "off", "mode": mode, "checked": [], "updates": [],
@@ -421,6 +486,11 @@ def run_sync(cfg, rows, state, now=None, fetcher=None):
             report["failed"].append(dict(outcome, stage="update"))
         else:
             report["skipped"].append(outcome)
+    if host_root is not None:
+        host = (host_updater or update_host)(host_root)
+        report["host"] = host
+        if host.get("result") == "failed":
+            report["failed"].append(dict(host, stage="host_update"))
     if authorized_once:
         state["sync_pending_once"] = False
     state["last_sync"] = time.time() if now is None else now
@@ -724,7 +794,7 @@ def main():
                     reserved["sync_pending_once"] = False
                     save_state(state_path, reserved)
                     stage = "sync"
-                    output = run_sync(cfg, rows, state)
+                    output = run_sync(cfg, rows, state, host_root=args.skill_root)
                 elif args.action == "missing":
                     target = next((row for row in rows if row["id"] == args.id), None)
                     if target is None:
