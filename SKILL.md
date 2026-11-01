@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.5.6"
+  version: "1.6.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.5.6
+# 墨卡大师 Memo-Cardest v1.6.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -21,7 +21,7 @@ metadata:
   - **所有需要用户选择的地方，统一用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）；不得只在正文写一句问题就结束回合，更不得直接终止对话；用户未回答则不推进。确实没有可用控件时才退回文字，并明确写「等你选择后继续」。
   - 用户没选就不推进：不生成卡片、不调用 API、不继续任何后续步骤。
   - 提问时说明第三项“不需要”会长期关闭同步，可随时主动重新开启；用户主动改口前不再询问。
-  - 选②时先确认当前客户端具备**完全权限**；没有则明确说“自动更新的安装需要完全权限”，不要声称已安装；用户可改选①或手动同步。安装完成后，实际更新由沙箱外定时任务执行，S0 仍只负责检查。
+  - 选②时先确认当前客户端具备**完全权限**；没有则明确说“自动更新的安装需要完全权限”，不要声称已安装；用户可改选①或手动同步。有权限时：Windows 运行 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\windows\install_sync_task.ps1`，macOS 运行 `sh scripts/macos/install_sync_agent.sh`；按退出码报告成功/失败，失败不得假装已安装。安装完成后，实际更新由沙箱外定时任务执行，S0 仍只负责检查。细节见 [references/auto-update.md](references/auto-update.md)。
   - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API，不能因为“只是改一张卡”跳过。
   - 脚本不可运行、状态损坏/被锁、授权不能读取或保存：报 `sync: unavailable · <原因>`，本次不同步、不反复询问或重置授权，继续独立可完成的制卡。状态无法保存时不承诺“已记住选择”；用户已作的选择仅在本次对话中记住，恢复后持久化仍需有明确依据。初始化可正常工作但用户尚未回答，不属于此异常分支。
   - 返回 `state_dir_not_writable`：这是沙箱不允许写状态目录，**不是**另一个进程抢锁。脚本会先尝试 `%TEMP%\MemoFramework` 自动 fallback；仍失败时用 `--state-dir <workspace>/.memo-state` 重试一次，或报 `sync: unavailable · state_dir_not_writable` 后继续制卡，不要求用户开完全权限。

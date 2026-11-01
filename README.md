@@ -60,6 +60,18 @@ python -B scripts/check_updates.py --state-dir "<workspace>\.memo-state" sync
 - 真实并发锁仍返回 `busy / sync_in_progress`；
 - 状态目录不可写返回 `error / state_dir_not_writable`，不是锁冲突。
 
+### 自动更新（可选）
+
+S0 选择「以后自动帮我同步」后，需要**完全权限**安装用户级后台任务：
+
+- Windows：`scripts\windows\install_sync_task.ps1`
+- macOS：`scripts/macos/install_sync_agent.sh`
+- 两个平台都每 6 小时运行一次，**不检测具体 Agent 进程**，同步所有已安装的 Memo 根目录；
+- 当前会话不会自动重载新版本，更新后需重启/新会话；
+- 安装失败必须明确报告，不得假装已安装。
+
+日志、卸载方式和限制见 [references/auto-update.md](references/auto-update.md)。
+
 TXT 容器格式不等于卡片正文语法；本技能不把二者混为一谈。旧称 Memo_Card_Maker 仅用于识别自然语言意图，不是另一个显式调用名。
 
 OCR 支链独立使用不要求 Markji 专业版，也不会自动制卡或上传到 Markji。选择 MinerUOCR 云端后，支链会引导使用者在官网注册、进入 API 管理创建并复制 Token，通过安全方式配置凭据；确认文件上传范围后才提交云端识别。本地路线不调用 MinerU、不要求 Token，也不上传文件。

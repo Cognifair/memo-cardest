@@ -2,6 +2,20 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.6.0 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/auto-update.md, scripts/windows/, scripts/macos/)
+
+### 新增
+
+- 自动更新安装器：Windows Task Scheduler 与 macOS LaunchAgent，每 6 小时同步所有已安装的 Memo 根目录。
+- 自动更新不检测具体 Agent 进程，适配任意客户端；安装需要完全权限，失败会明确报告未安装。
+- 提供安装/卸载脚本、日志位置与限制说明。
+
+### 变更
+
+- S0 的「以后自动帮我同步」现在会走对应平台的安装器，而不是只记录偏好。
+
 ## v1.5.6 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md)
