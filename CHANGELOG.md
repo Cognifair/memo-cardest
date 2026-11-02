@@ -2,6 +2,18 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.10.0 — 2026-11-02
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/capability-map.md)
+
+### 新增
+
+- README 首屏增加「能做什么（直接这样说）」表，把批量删除、表格、TXT、OCR、卡跳跳、Anki、答疑都放到用户第一眼能看到的位置。
+- SKILL 增加能力提示与路由：用户问「你能做什么 / 有哪些功能 / 怎么用」时先回答能力地图，不直接进入 G0 路线提问。
+- 首次使用完成同步选择后提示一次能力入口，明确「批量删除是内置能力，不用另装技能」；其他任务不反复播报。
+- 新增 `references/capability-map.md`，记录触发说法、执行技能与边界。
+- 同步更新 frontmatter description，让批量删除与支线路由更容易被技能发现。
+
 ## v1.9.3 — 2026-11-02
 
 影响面：memo-cardest(README.md, CHANGELOG.md)

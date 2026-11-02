@@ -1,17 +1,25 @@
 ---
 name: memo-cardest
-description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
+description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.9.3"
+  version: "1.10.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.9.3
+# 墨卡大师 Memo-Cardest v1.10.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
 把学习材料变成可主动回忆、可判分、符合当前 Markji 语法的卡片。调用名 `$memo-cardest`，展示名「墨卡大师 Memo-Cardest」，旧称 `Memo_Card_Maker` 只用于识别意图，不保留旧入口。
 
 按 S0→G4 处理适用步骤；初始化异常、明确 TXT 路线和只读审查按下述分支处理。报告实际检查与未验证项，不把跳过的步骤说成已完成。
+
+## 能力提示与路由
+
+- 用户问「你能做什么 / 有哪些功能 / 怎么用」时，先读 [references/capability-map.md](references/capability-map.md)，用 6–8 行回答，再问「你想先做哪一件」；不要直接进入 G0 的 API/TXT 路线提问。
+- 首次使用完成同步选择后，提示一次：
+  「你可以直接说：做卡 / 批量删除（DELETE 章） / 表格 / TXT / OCR / 卡跳跳 / Anki 迁墨 / 产品答疑。批量删除是内置能力，不用另装技能。」
+  只提示一次，不追问；其他任务不主动播报。
+- 不要把批量删除说成独立技能；它是本技能的 DELETE 章流程。
 
 ## S0 启动同步（每次任务第一件事，早于 G0）
 

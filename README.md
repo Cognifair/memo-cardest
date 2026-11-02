@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.9.3
+# 墨卡大师 Memo-Cardest v1.10.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -11,6 +11,21 @@
 调用名 `$memo-cardest` · [宣传页](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB) · [变更记录](CHANGELOG.md)
 
 它不复刻「手写一张好卡」这件事。Anki 社区那种卡——题面聚焦、只引导一个答案、难度落在合意困难那一段——是人的判断，不是模型的判断。所以这里换了个做法：**你把标准做进一张样卡，它负责把标准复制到剩下的每一张上。**
+
+## 能做什么（直接这样说）
+
+| 你想做什么 | 直接说 | 谁执行 |
+|---|---|---|
+| 做卡、改卡、操作牌组 | “把这些材料做成卡” | `memo-cardest` |
+| **批量删除卡片** | “把这些卡批量删掉” | **`memo-cardest` 内置 DELETE 章流程** |
+| 表格 | “这张表做成表格卡” | `memo-table` |
+| 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txtimporter` |
+| 扫描件 / PDF OCR | “先 OCR 再制卡” | `memo-mineruocr` |
+| 卡片互链 / 目录跳转 | “给这两张卡加双向链接” | `memo-cardlink`（卡跳跳） |
+| Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankitransfer`（迁墨） |
+| 墨墨产品使用问题 | “这个设置在哪” | `memo-qahelper` |
+
+批量删除不是独立技能，是主技能内置流程；表格会由 G1.5 强制触发 `memo-table`。
 
 ## 30 秒判断要不要装
 
