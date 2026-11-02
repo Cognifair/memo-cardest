@@ -1,0 +1,4 @@
+# 本仓库的主体是技能文档，scripts/ 只是执行器；
+# 让 GitHub 的语言统计忽略它们，避免被误认成一个 Python 项目。
+scripts/** linguist-vendored
+references/** linguist-documentation

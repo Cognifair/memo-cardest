@@ -1,43 +1,83 @@
-# 墨卡大师 Memo-Cardest
+# 墨卡大师 Memo-Cardest v1.9.1
 
-> 🌐 [墨卡大师 · 专业制卡工作流](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB)
+[![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
+![Agent](https://img.shields.io/badge/agent-Codex%20%7C%20Claude%20Code%20%7C%20WorkBuddy%20%7C%20DSH-4b5563)
 
-墨墨记忆卡（Markji）的核心制卡技能：把学习材料拆解成明确、可主动回忆的卡片，负责知识组织、题型设计、卡片正文语法与学习排版。扫描件和大 PDF 可通过独立的 Memo-MinerUOCR 支链先识别、拆分解析并合并为 Markdown，再进入制卡流程。
+**把复习材料拆成一张张能问出问题的卡。**
 
-调用名：`$memo-cardest`。版本以 [SKILL.md](SKILL.md) 的 `metadata.version` 和 [version.json](version.json) 为准，变更记录见 [CHANGELOG.md](CHANGELOG.md)。
+墨墨记忆卡（Markji）的核心制卡技能：拆知识点、设计题面、写卡片正文、按章节排版，最后走官方 OpenAPI 直接写回，或导出一份 UTF-8 TXT 由客户端导入。扫描件和大 PDF 可以先交给 [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) 识别成 Markdown，再进入制卡流程。
 
-## 能做什么
+调用名 `$memo-cardest` · [宣传页](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB) · [变更记录](CHANGELOG.md)
 
-- 从学习材料确定记忆目标，拆分知识点，设计题面、答案、解释和章节。
-- 核对当前官方 OpenAPI 与语法指南，按实际适用的语法生成卡片正文。
-- 按用户指定路线使用官方 OpenAPI 或制作 UTF-8 TXT；明确要本地文件时不询问会员或读取凭证。
-- 检查学习覆盖度、正文结构、换行与媒体引用；不把接口成功当作客户端渲染验收。
-- API 卡片操作提供本地变更清单、逐项状态和独立回读比对；接口字段仍按实时文档提取，脚本不联网、不读取凭证、不自动重试或续跑。使用说明见 [卡片变更记录](references/change-journal.md)。
-- 需要时配合独立的 OCR、文档导入和表格技能；扩展缺失时说明限制，继续完成可交付部分。
-- 批量删除：AI 只把目标卡移入 `DELETE` 章节并回读核对，最后由用户在客户端手动删除该章；不调用删除接口。
-- 开局强制审查真实表格；发现表格就调用 `memo-table`，没有才继续普通制卡。
-- 每次业务任务开局先做一次同步检查（首次会询问授权）：先检查主技能自身，再按已核实仓库更新支链；主链更新后需重启/新会话生效。
+它不是「一键把书变成 500 张卡」的那个工具。它会逼你在每张卡上回答一个问题：**这张卡到底要我想起什么？** 答不上来的知识点会被退回重拆，而不是塞进挖空里。
 
-## 执行顺序（S0 → G4）
+## 30 秒判断要不要装
 
-| 步骤 | 内容 | 留痕 |
-|---|---|---|
-| **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
-| **G0** | 交付路线与凭证：先用问题框确认 API/TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
-| **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
-| **G1.5** | 强制表格审查：有真实表格就调用 `memo-table`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-table invoked` |
-| **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期或不适用, tutuji@日期或不适用` |
-| **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |
-| **G4** | 验收与交付：逐条过质检清单，回读比对 | 勾选结果 + 待验证项 |
+| 你的情况 | 结论 |
+|---|---|
+| 有 PDF、笔记或讲义，想变成能主动回忆的卡 | 装 |
+| 已经在 Anki 里做图片挖空，想搬成墨墨原生遮罩 | 装，再配 [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) |
+| 只想生成一份 TXT 自己导入，不碰 API | 装。不需要会员，也不需要 API key |
+| 想要「读完整本书，自动出 500 张卡」 | 别装。自动拆出来的卡，题面基本都是糊的 |
 
-正常首次初始化保留开头三选一并等待选择。“不需要”表示长期关闭，用户主动改口前不再问。同步脚本不可用、状态损坏/被锁、读取或保存失败时，本次停同步、继续独立业务；不重置授权或反复弹窗。其余步骤按任务适用性处理，不把跳过或未验证的项目说成已完成。
+## 长什么样
 
-### 自动同步的安装方式：`git clone`
+材料里的一句话：
 
-自动同步需要**主技能自身和支链**都是 git 工作副本。用拷贝文件或解压 ZIP 的方式安装仍可制卡，但 `sync` 会对相应项返回 `skipped: not_a_git_checkout`。更新显式拉取清单的远端分支，核对技能身份/版本后快进合并，不依赖当前分支的 upstream。旧版本若还没有主链自更新逻辑，需要先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
+> 立方和公式：a³ + b³ = (a + b)(a² − ab + b²)
+
+**不这么写**：把整条公式挖空。你练的是符号的形状，换个字母就断。
+
+**这么写**，拆成三张：
+
+| 题面 | 答案面 |
+|---|---|
+| a³ + b³ 分解后的两个因式分别是什么？ | (a + b) 和 (a² − ab + b²) |
+| 第二个因式里为什么是 −ab，而不是 +ab？ | 展开时 a·(−ab) 与 b·(a²) 的交叉项要正好抵消；写成 +ab 就消不掉 |
+| 已知 a + b = 3、ab = 2，求 a³ + b³。 | 9。（a² − ab + b² = (a+b)² − 3ab = 3） |
+
+<!-- 截图位：把成品卡截图放到 docs/images/ 后，把下面这行注释换成真正的图片引用
+![成品卡示例](docs/images/card-demo.png)
+建议至少两张：一张客户端里的挖空卡，一张带表格的卡。
+-->
+
+## 安装
+
+技能就是一堆本地文件，没有安装包，也不需要联网。把仓库放进你客户端的技能目录即可：
+
+| 客户端 | 技能目录 |
+|---|---|
+| DSH | `~/.agents/skills` |
+| Codex | `~/.codex/skills` |
+| Claude Code | `~/.claude/skills` |
+| WorkBuddy | `~/.workbuddy/skills` |
+
+### 路线 A：git clone（推荐）
+
+能自动更新，也能被技能自带的同步检查识别。
 
 ```text
-git clone https://github.com/Cognifair/memo-cardest.git
+git clone https://github.com/Cognifair/memo-cardest.git <技能目录>/memo-cardest
+```
+
+### 路线 B：下载 ZIP
+
+在仓库页 `Code → Download ZIP`，解压成 `<技能目录>/memo-cardest`（目录名要和 `SKILL.md` 里的 `name` 一致）。能用，但自带的同步检查会返回 `skipped: not_a_git_checkout`，只能手动更新。
+
+### 装完之后
+
+- **重启客户端**。Codex / WorkBuddy 只在启动时扫描技能目录，运行中的会话不会重新加载；DSH 会热加载，能看到即时变化。
+- 在对话里说 `$memo-cardest`，或者直接说「帮我做几张卡」——技能的描述里已经写了触发词。
+
+### 支链（可选）
+
+支链是独立仓库，不随本仓库分发。缺了只降级，不影响主流程。
+
+<details>
+<summary>展开：支链的 clone 命令</summary>
+
+```text
 git clone https://github.com/Cognifair/memo-mineruocr.git
 git clone https://github.com/Cognifair/memo-table.git
 git clone https://github.com/Cognifair/memo-txtimporter.git
@@ -45,94 +85,99 @@ git clone https://github.com/Cognifair/memo-ankitransfer.git
 git clone https://github.com/Cognifair/memo-qahelper.git
 ```
 
-克隆后用 `inventory` 确认每项都有 `.git`；`--depth 1` 的浅克隆不推荐，`pull` 偶尔需要完整历史。
+克隆后用 `python -B scripts/check_updates.py inventory` 确认每项都有 `.git`；不建议 `--depth 1`，浅克隆在 `pull` 时偶尔需要完整历史。
 
-**克隆或升级后要重启客户端**：Codex / WorkBuddy 只在启动时扫描技能目录，运行中的会话不会重新加载（DSH 会热更新目录，所以那边能即时看到）。
+</details>
 
-### 状态目录与 workspace-write
+## 第一次使用会发生什么
 
-默认状态目录是 `%LOCALAPPDATA%\Codex\MemoFramework`。如果工作区沙箱不允许写这个目录，脚本会**自动 fallback 到 `%TEMP%\MemoFramework`**，并尽量从原状态复制 `sync_mode`/`last_sync`，不会把它误报成“锁被占用”。
+1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
+2. **问两个问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、要不要照第一张卡的样式。用户没回答不往下推进。
+3. **开工。** 遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
-若 TEMP 也不可写，使用显式目录：
+最小示例：
+
+> 使用 `$memo-cardest`，把这份复习材料制作成墨墨记忆卡，保持完整知识覆盖。
+
+正常首次任务先出现同步三选一；TXT 路线不会问会员，也不会碰 API key。
+
+## 常见问题
+
+**要买墨墨会员吗？** TXT 路线不需要；API 路线用官方 OpenAPI 直接写回，需要对应的专业版授权。
+
+**要 API key 吗？** 只有 API 路线需要。默认读环境变量 `MAIMEMO_TOKEN`，也可以在一次任务里单独指定；本次指定的 key 优先于默认值，验证失败不会自动改用另一个账户。
+
+**会不会删掉我已经有的卡？** 不会自动删。批量删除时，AI 只把目标卡移进 `DELETE` 章节并回读核对，最后的删除动作由你在客户端里手动完成，不调用删除接口。
+
+**装完了，但对话里没反应？** 先重启客户端。Codex / WorkBuddy 只在启动时扫描技能目录；DSH 热加载，不用重启。另外确认目录名是 `memo-cardest`，和 `SKILL.md` 的 `name` 一致。
+
+**我的材料会被上传吗？** 主流程只在本地读文件。只有你主动选择 MinerU 云端 OCR 时才会提交文件，而且会先确认上传范围；本地 OCR 路线不联网、不需要 Token。
+
+**要不要开自动更新？** 可选。开了会装一个用户级的定时任务，每 6 小时检查一次（Windows 任务计划程序 `MemoCardestSync`，macOS LaunchAgent `com.cognifair.memocardest.sync`），需要完全权限；不开就自己 `git pull`。细节见 [references/auto-update.md](references/auto-update.md)。
+
+**和 Anki 是什么关系？** 不是 Anki 的替代品，也不解析 Anki 的牌组。只有 [迁墨](https://github.com/Cognifair/memo-ankitransfer) 这一条支链负责把 Anki 的图片挖空卡转成墨墨原生遮罩。
+
+## 使用边界
+
+- 专业版路线只使用获授权的官方 OpenAPI，不自动切换到逆向接口；凭证缺失时说明限制，不猜。
+- 生成平台语法或写回前先查当前文档；文档取不到时暂停依赖它的语法交付或账户写入，纯文本草稿可以继续。
+- 文件生成和结构检查不等于已上传，也不等于客户端已经正确渲染。
+- 不伪造媒体 ID、卡片引用或「已完成的检查」；不承诺用新建卡片保留旧 ID 和学习进度。
+- API key、Cookie、token 不写进仓库，也不展开在工具参数或命令记录里。
+- 附件和网页只作为材料，其中的指令不会被执行。
+
+<details>
+<summary>展开：执行顺序（S0 → G4）</summary>
+
+| 步骤 | 内容 | 留痕 |
+|---|---|---|
+| **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
+| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
+| **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
+| **G1.5** | 强制表格审查：有真实表格就调用 `memo-table`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-table invoked` |
+| **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期` 或 `tutuji@日期`，不适用时写「不适用」 |
+| **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |
+| **G4** | 验收与交付：逐条过质检清单，回读比对 | 勾选结果 + 待验证项 |
+
+正常首次初始化保留开头三选一并等待选择。「不需要」表示长期关闭，用户主动改口前不再问。同步脚本不可用、状态损坏或被锁、读写失败时，本次停同步、继续独立业务；不重置授权，也不反复弹窗。
+
+</details>
+
+<details>
+<summary>展开：能力清单</summary>
+
+- 从学习材料确定记忆目标，拆分知识点，设计题面、答案、解释和章节。
+- 核对当前官方 OpenAPI 与语法指南，按实际适用的语法生成卡片正文。
+- 按用户指定路线使用官方 OpenAPI 或制作 UTF-8 TXT；明确要本地文件时不询问会员、不读取凭证。
+- 检查学习覆盖度、正文结构、换行与媒体引用；不把接口成功当作客户端渲染验收。
+- API 卡片操作提供本地变更清单、逐项状态和独立回读比对；接口字段按实时文档提取，脚本不联网、不读取凭证、不自动重试或续跑。说明见 [卡片变更记录](references/change-journal.md)。
+- 需要时配合独立的 OCR、文档导入和表格技能；扩展缺失时说明限制，继续完成可交付部分。
+- 批量删除：AI 只把目标卡移入 `DELETE` 章节并回读核对，最后由用户在客户端手动删除该章。
+- 开局强制审查真实表格；发现表格就调用 `memo-table`，没有才继续普通制卡。
+- 每次业务任务开局先做一次同步检查（首次会询问授权）：先检查主技能自身，再按已核实仓库更新支链。
+- 旧称 `Memo_Card_Maker` 仅用于识别自然语言意图，不是另一个调用名。
+
+</details>
+
+<details>
+<summary>展开：自动同步与状态（可选功能，排查时看）</summary>
+
+自动同步要求主技能和支链都是 git 工作副本；拷贝文件或解压 ZIP 安装时，`sync` 会对相应项返回 `skipped: not_a_git_checkout`。更新只显式拉取清单里的远端分支，核对技能身份和版本后做快进合并，不依赖当前分支的 upstream。旧版本没有主链自更新逻辑时，先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
+
+状态目录默认是 `%LOCALAPPDATA%\Codex\MemoFramework`。沙箱不允许写时，脚本会自动 fallback 到 `%TEMP%\MemoFramework`，并尽量从原状态复制 `sync_mode` / `last_sync`，不会误报成「锁被占用」。TEMP 也不可写时用显式目录：
 
 ```text
 python -B scripts/check_updates.py --state-dir "<workspace>\.memo-state" sync
 ```
 
-- 这是独立的每工作区状态，可能和 Codex 桌面端的状态分叉；
-- 真实并发锁仍返回 `busy / sync_in_progress`；
-- 状态目录不可写返回 `error / state_dir_not_writable`，不是锁冲突。
+这是每个工作区独立的状态，可能和桌面端的状态分叉。真实并发锁返回 `busy` / `sync_in_progress`；状态目录不可写返回 `error` / `state_dir_not_writable`，不是锁冲突。
 
-### 自动更新（可选）
+安装用户级后台任务（需要完全权限）：Windows 用 `scripts\windows\install_sync_task.ps1`，macOS 用 `scripts/macos/install_sync_agent.sh`。两个平台都是每 6 小时一次，不检测具体 Agent 进程，同步所有已安装的 Memo 根目录。`auto` 模式下 S0 只跑 `check --include-host --manual`，不改技能文件；实际更新由后台任务执行。当前会话不会重载新版本，更新后需重启或新会话。安装失败必须明确报告，不会假装已安装。
 
-S0 选择「以后自动帮我同步」后，需要**完全权限**安装用户级后台任务：
+</details>
 
-- Windows：`scripts\windows\install_sync_task.ps1`
-- macOS：`scripts/macos/install_sync_agent.sh`
-- 两个平台都每 6 小时运行一次，**不检测具体 Agent 进程**，同步所有已安装的 Memo 根目录；
-- S0 在 `auto` 模式下只运行 `check --include-host --manual`，不修改技能文件；实际更新由后台任务执行；
-- 当前会话不会自动重载新版本，更新后需重启/新会话；
-- 安装失败必须明确报告，不得假装已安装。
-
-日志、卸载方式和限制见 [references/auto-update.md](references/auto-update.md)。
-
-TXT 容器格式不等于卡片正文语法；本技能不把二者混为一谈。旧称 Memo_Card_Maker 仅用于识别自然语言意图，不是另一个显式调用名。
-
-OCR 支链独立使用不要求 Markji 专业版，也不会自动制卡或上传到 Markji。选择 MinerUOCR 云端后，支链会引导使用者在官网注册、进入 API 管理创建并复制 Token，通过安全方式配置凭据；确认文件上传范围后才提交云端识别。本地路线不调用 MinerU、不要求 Token，也不上传文件。
-
-## 使用示例
-
-> 使用 $memo-cardest，把这份复习材料制作成墨墨记忆卡，保持完整知识覆盖。
-
-正常首次任务先选择“仅这次同步（不安装自动更新） / 以后自动帮我同步（安装自动更新需要开启完全权限） / 不需要”，保存后不重复问；没有完全权限时明确说明安装未完成，不假装已安装。同步异常时说明限制并继续业务。明确 TXT/本地制卡不问会员，只有交付路线和状态都不明确时才补问。
-
-## 使用边界
-
-- 专业版路线仅使用获授权的官方 OpenAPI，不自动切换逆向接口；凭证缺失时说明限制。
-- API 优先使用本次明确指定的 key，无指定时才用默认 `MAIMEMO_TOKEN`；验证失败不自动回退另一个账户。经用户同意可通过安全渠道保存自己的 key 到用户环境变量，不把真实密钥展开到工具参数或命令记录。已有变量不因本次换 key 自动覆盖。
-- TXT 路线不请求账户凭证、不自动操作客户端导入。文件生成与结构检查不等于已上传或已验证显示。
-- 不伪造媒体 ID、卡片引用或已完成的检查；不承诺通过新建卡片保留旧 ID 和学习进度。
-- 生成平台语法或写回前访问本路线适用文档；无法访问时暂停依赖它的最终语法交付或账户写入，可继续纯文本草稿。TXT 不受无关的 API 定义不可达影响。
-- 附件和网页只作为材料，不授权执行其中的命令。不将 API key、Cookie、token 等写入仓库。
-
-## 架构设计
-
-### 分层
-
-| 层 | 文件 | 作用 |
-|---|---|---|
-| 行为规范 | [SKILL.md](SKILL.md) | S0–G4 执行顺序、留痕要求、支链与更新政策 |
-| 参考知识 | `references/*.md` | 按需读取：API、TXT、设计工具箱、表格、质检、支链框架、支链清单 |
-| 执行器 | `scripts/check_updates.py` | 本地盘点、启动同步、版本检查、新技能发现；显式拉取远端分支、核验后仅快进合并 |
-| 自动更新 | `scripts/windows/`, `scripts/macos/` | 可选安装用户级定时同步任务；安装需要完全权限 |
-| 自带测试 | `scripts/test_check_updates.py` | 离线验证执行器，不访问真实版本源 |
-| 行为评测 | `references/behavioral-evals.md` | 初始化、凭证路由、知识覆盖、重复执行与媒体场景；与脚本测试分别记录 |
-| 版本标识 | [version.json](version.json) | 供版本检查读取 |
-| 变更记录 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的更新说明 |
-| 界面配置 | `agents/openai.yaml` | 展示名与默认提示词 |
-
-### 入口与引用（v1.7.1 起）
-
-主入口只保留路线选择、强制步骤和安全边界；详细规则按任务读取，不要求每次全部读完。
-
-| 任务 | 先读 |
-|---|---|
-| API 路线 | [references/credentials.md](references/credentials.md) → [references/api-workflow.md](references/api-workflow.md) |
-| TXT 路线 | [references/txt-workflow.md](references/txt-workflow.md) |
-| 发现表格 | [references/table-decision.md](references/table-decision.md) |
-| 批量删除 | [references/batch-delete.md](references/batch-delete.md) |
-| 自动更新安装 | [references/auto-update.md](references/auto-update.md) |
-| 维护/评测 | [references/satellite-framework.md](references/satellite-framework.md)、[references/behavioral-evals.md](references/behavioral-evals.md) |
-
-支链（Memo-MinerUOCR / Memo-Txtimporter / Memo-Table / 迁墨 Memo-Ankitransfer）是**独立技能**，不在本仓库内，也不随本仓库分发。
-
-### 三条不变量
-
-1. **主功能自包含。** 任何支链缺失都只降级——说明实际限制，继续完成可交付部分，不让核心流程停摆。
-2. **授权先于动作。** 同步默认未授权，首次使用必须先问；新支链发现是另一项独立授权，未经要求不扫描。
-3. **更新仅允许快进。** 只对清单内、来源已核实的支链和当前主技能更新，提交 ID 可追溯；工作区脏、远端/分支不符、历史分歧、非 git 仓库一律跳过。核对候选身份/版本及最终 HEAD；主技能更新后当前会话暂停，重启/新会话生效；不创建定时任务，不发布 GitHub。
-
-### 执行器命令
+<details>
+<summary>展开：执行器命令</summary>
 
 ```text
 python -B scripts/check_updates.py <命令>
@@ -141,38 +186,73 @@ python -B scripts/check_updates.py <命令>
 | 命令 | 作用 |
 |---|---|
 | `inventory` / `status` | 本地已装支链 / 当前同步与授权状态（只读，不联网） |
-| `sync` | 手动/后台完整同步：未授权返回 `needs_consent`；`auto`/`once` 时检查并更新主技能与支链 |
+| `sync` | 手动或后台完整同步：未授权返回 `needs_consent`；`auto` / `once` 时检查并更新主技能与支链 |
 | `sync-consent once\|auto\|off` | 记录同步授权（仅这次 / 以后自动 / 不需要）；`auto` 的自动更新安装需要完全权限 |
-| `check [--manual] [--include-new] [--include-host]` | 只读版本检查；`--include-host` 额外比较主技能本地/远端 HEAD |
+| `check [--manual] [--include-new] [--include-host]` | 只读版本检查；`--include-host` 额外比较主技能本地与远端 HEAD |
 | `discover [--manual]` | 只做新技能发现 |
-| `complete --task-id <id>` | 记录一次业务交付，返回缺失能力是否需介绍 |
+| `complete --task-id <id>` | 记录一次业务交付，返回缺失能力是否需要介绍 |
 | `missing --id <支链> --session-id <会话>` | 记录任务中的缺失提醒 |
 | `record pitch\|declined\|discovery-notified\|discovery-dismissed` | 记录提醒与拒绝 |
 
-旧命令 `consent` 仍保留兼容，但新流程只使用 `sync-consent`。
+</details>
 
-### 授权与状态
+<details>
+<summary>展开：授权与状态</summary>
 
 | 项 | 说明 |
 |---|---|
 | 默认 | `sync_mode=unset`：首次使用先问，未回答不授权 |
-| `once` | 只尝试同步这一次，CLI 在动作前持久化清除 `sync_pending_once`，失败或中断也不自动重用授权 |
+| `once` | 只尝试同步这一次；CLI 在动作前持久化清除 `sync_pending_once`，失败或中断也不自动重用授权 |
 | `auto` | 每次任务开局自动同步，不再询问 |
 | `off` | 不同步、不追问；用户主动改口才重新授权 |
 | 节流 | 启动同步每次执行；独立 `check` 与技能发现按来源间隔 24 小时 |
-| 状态位置 | 写入操作系统本地数据目录（`Codex/MemoFramework/`），**不写回本仓库** |
+| 状态位置 | 写入操作系统本地数据目录，**不写回本仓库** |
 | 状态隔离 | 每个技能独立；安装副本不携带他人的授权 |
 | 异常 | 状态故障不重置授权、不重复询问；更新前检查可写，更新后保存失败返回 `sync_report` 保留实际结果 |
 
-### 网络边界
+</details>
 
-- 版本清单只向 `allowed_version_hosts` 白名单域名发起 HTTPS GET；当前为 `raw.githubusercontent.com`
-- 6 秒超时；版本清单响应上限 16 KiB；仓库发现时单份技能上限 256 KiB、公开列表上限 2 MB
-- 禁止重定向、禁止 URL 内凭据与查询参数、禁止 IP 字面量与私网解析地址
-- 不带 Token、Cookie 等凭据；不上传卡片、材料、对话或本地技能清单
-- Git 更新核对 `origin` 的唯一有效 URL 与 `repository_url`，显式拉取 `repository_branch`（旧配置默认 `main`），验证候选技能和版本后只做 fast-forward；Git 不依赖版本 HTTP 客户端的超时/响应大小设置
+<details>
+<summary>展开：架构与不变量</summary>
 
-### 概念区分
+| 层 | 文件 | 作用 |
+|---|---|---|
+| 行为规范 | [SKILL.md](SKILL.md) | S0–G4 执行顺序、留痕要求、支链与更新政策 |
+| 参考知识 | `references/*.md` | 按需读取：API、TXT、设计工具箱、表格、质检、支链框架 |
+| 执行器 | `scripts/check_updates.py` | 本地盘点、启动同步、版本检查、新技能发现；显式拉取远端分支、核验后仅快进合并 |
+| 自动更新 | `scripts/windows/`, `scripts/macos/` | 可选安装用户级定时同步任务 |
+| 自带测试 | `scripts/test_check_updates.py` | 离线验证执行器，不访问真实版本源 |
+| 行为评测 | [references/behavioral-evals.md](references/behavioral-evals.md) | 初始化、凭证路由、知识覆盖、重复执行与媒体场景 |
+| 版本标识 | [version.json](version.json) | 供版本检查读取 |
+| 界面配置 | `agents/openai.yaml` | 展示名与默认提示词 |
+
+入口只保留路线选择、强制步骤和安全边界，详细规则按任务读取：
+
+| 任务 | 先读 |
+|---|---|
+| API 路线 | [references/credentials.md](references/credentials.md) → [references/api-workflow.md](references/api-workflow.md) |
+| TXT 路线 | [references/txt-workflow.md](references/txt-workflow.md) |
+| 发现表格 | [references/table-decision.md](references/table-decision.md) |
+| 批量删除 | [references/batch-delete.md](references/batch-delete.md) |
+| 自动更新安装 | [references/auto-update.md](references/auto-update.md) |
+| 维护 / 评测 | [references/satellite-framework.md](references/satellite-framework.md)、[references/behavioral-evals.md](references/behavioral-evals.md) |
+
+三条不变量：
+
+1. **主功能自包含。** 任何支链缺失都只降级——说明实际限制，继续完成可交付部分，不让核心流程停摆。
+2. **授权先于动作。** 同步默认未授权，首次使用必须先问；新支链发现是另一项独立授权，未经要求不扫描。
+3. **更新仅允许快进。** 只对清单内、来源已核实的支链和当前主技能更新，提交 ID 可追溯；工作区脏、远端或分支不符、历史分歧、非 git 仓库一律跳过。主技能更新后当前会话暂停，重启或新会话生效。
+
+</details>
+
+<details>
+<summary>展开：网络边界与状态区分</summary>
+
+- 版本清单只向 `allowed_version_hosts` 白名单域名发起 HTTPS GET；当前为 `raw.githubusercontent.com`。
+- 6 秒超时；版本清单响应上限 16 KiB；仓库发现时单份技能上限 256 KiB、公开列表上限 2 MB。
+- 禁止重定向、禁止 URL 内凭据与查询参数、禁止 IP 字面量与私网解析地址。
+- 不带 Token、Cookie 等凭据；不上传卡片、材料、对话或本地技能清单。
+- Git 更新核对 `origin` 的唯一有效 URL 与 `repository_url`，显式拉取 `repository_branch`，验证候选技能和版本后只做 fast-forward。
 
 | 状态 | 含义 |
 |---|---|
@@ -180,26 +260,42 @@ python -B scripts/check_updates.py <命令>
 | `marketplace_status=unverified` | 未核实平台技能市场条目 |
 | `not_configured` / `throttled` / `failed` / `partial` | **都不是**「已是最新版」，也不等于「没有新技能」 |
 
-### 版本一致性
+</details>
 
-发布新版本时，以下四处应保持一致：
+<details>
+<summary>展开：维护与本地验证</summary>
+
+发布新版本时，以下四处保持一致：
 
 - [SKILL.md](SKILL.md) 的 `metadata.version`
 - [version.json](version.json) 的 `version`
 - `agents/openai.yaml` 展示名里的版本后缀
 - [CHANGELOG.md](CHANGELOG.md) 的最新条目
 
-## 本地验证
-
-使用已有 Python 3 运行时，无须额外依赖：
+离线测试（只用已有的 Python 3，不需要额外依赖）：
 
 ```text
 python -B scripts/test_check_updates.py
 ```
 
-测试不访问真实远端版本源，也不写入使用者的授权状态；包含本地 Git 仓库集成测试，需要 Python 3 和 Git。测试包括错误 upstream、候选版本/身份不一致、分支分歧、失败分类与状态读写异常。
+测试不访问真实远端版本源，也不写入使用者的授权状态；包含本地 Git 仓库集成测试，覆盖错误 upstream、候选版本或身份不一致、分支分歧、失败分类与状态读写异常。维护后另按 [行为评测](references/behavioral-evals.md) 执行代表性用户场景并记录实际输出。离线测试通过不代表真实账户写入、TXT 导入或客户端渲染已验证。
 
-维护后另按 [行为评测](references/behavioral-evals.md) 执行代表性用户场景，记录实际输出及未测项。离线测试通过不代表真实账户写入、TXT 导入或客户端渲染已验证。
+</details>
+
+## 目录结构
+
+```text
+memo-cardest/
+├── SKILL.md                 # 行为规范：S0–G4、留痕、边界
+├── references/              # 按需读取的细节文档（API、TXT、表格、质检…）
+├── scripts/
+│   ├── check_updates.py     # 执行器：盘点、同步、版本检查
+│   └── windows|macos/       # 可选的后台同步任务安装脚本
+├── agents/openai.yaml       # 展示名与默认提示词
+├── version.json             # 版本标识
+├── CHANGELOG.md             # 变更记录
+└── LICENSE                  # MIT
+```
 
 ## Memo 系列
 
@@ -216,4 +312,4 @@ python -B scripts/test_check_updates.py
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) © Cognifair

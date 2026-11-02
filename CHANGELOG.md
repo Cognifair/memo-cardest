@@ -2,6 +2,21 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.9.1 — 2026-11-02
+
+影响面：memo-cardest(README.md, .gitattributes, CHANGELOG.md)
+
+### 变更
+
+- README 按「第一次来的人」重排：首屏给一句话定位、适用与不适用、效果示例和两条安装路线；执行顺序、能力清单、同步与网络边界等技术细节折叠进 details。
+- 新增常见问题（会员、API key、删卡、重启、上传、自动更新、与 Anki 的关系）；安装说明改用四个客户端的技能目录，不再要求先读懂状态目录。
+- 新增 .gitattributes，把 scripts 标为 vendored、references 标为 documentation，GitHub 侧栏不再把本技能统计成 Python 项目。
+
+### 测试
+
+- 仅文档与仓库元数据改动，未动执行器与 SKILL.md；README 结构自检通过（details/summary 配对、相对链接可解析、memo-series 块与生成结果一致）。
+- 100 项离线测试未重跑（无代码变更）。
+
 ## v1.9.0 — 2026-11-02
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/auto-update.md, scripts/check_updates.py, scripts/test_check_updates.py)
