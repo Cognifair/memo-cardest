@@ -4,7 +4,7 @@ S0 的「② 以后自动帮我同步」会在用户确认后安装一个**用�
 
 只在用户选择②并准备安装、明确要求卸载或排查后台任务时读取本文件。记录 `sync_mode=auto` 不等于安装成功；已有偏好不触发重新安装。安装以命令退出码及实际结果报告，失败不能声称已安装。
 
-当前 S0 仍调用 `check_updates.py sync`，授权后可能 fetch、快进更新主技能与支链；它不是只读检查，也不会因安装后台任务自动变成只读。这里只整理安装说明，不实现 `plan/apply` 分离。
+`auto` 模式下 S0 只调用 `check_updates.py check --include-host --manual`：比较版本与 host HEAD，不改技能文件（仍可能写状态 `last_checks`）；实际更新由后台任务执行。只有 `once` 或用户手动执行时，S0 才调用会 fetch/merge 的 `sync`。这里不实现 `plan/apply` 的文件级事务。
 
 ## 行为
 

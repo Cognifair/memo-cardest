@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.8.0"
+  version: "1.9.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.8.0
+# 墨卡大师 Memo-Cardest v1.9.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -17,26 +17,23 @@ metadata:
 
 先读取同步状态，正常首次使用完成一次初始化选择，再做业务。回复里留一行：`sync: <模式> · <host 结果> · <支链结果>`。脚本命令均相对本技能目录执行，避免把用户工作目录误当技能目录。
 
-- **首次使用**（本机 `sync_mode` 为 `unset`）：先问「要不要开启技能自动同步？① 仅这次同步（不安装自动更新） ② 以后自动帮我同步（安装自动更新需要开启完全权限） ③ 不需要」，等回答；按选择执行 `python scripts/check_updates.py sync-consent once|auto|off`，再跑 `sync`。
-  - **所有需要用户选择的地方，统一用当前 Agent 的交互式问题框**（如 `ask_user_question` 工具）；不得只在正文写一句问题就结束回合，更不得直接终止对话；用户未回答则不推进。确实没有可用控件时才退回文字，并明确写「等你选择后继续」。
-  - 用户没选就不推进：不生成卡片、不调用 API、不继续任何后续步骤。
-  - 提问时说明第三项“不需要”会长期关闭同步，可随时主动重新开启；用户主动改口前不再询问。
-  - 选②时，在安装前读取 [references/auto-update.md](references/auto-update.md)，按其中的平台命令和权限前提执行；权限不足或安装失败必须报告“自动更新未安装”，可改选①或手动同步。当前 `sync` 在授权后仍可能更新主技能和支链，不是只读检查；后台任务是另一执行入口，安装不能把 S0 变成只读。
-  - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API，不能因为“只是改一张卡”跳过。
-  - 脚本不可运行、状态损坏/被锁、授权不能读取或保存：报 `sync: unavailable · <原因>`，本次不同步、不反复询问或重置授权，继续独立可完成的制卡。状态无法保存时不承诺“已记住选择”；用户已作的选择仅在本次对话中记住，恢复后持久化仍需有明确依据。初始化可正常工作但用户尚未回答，不属于此异常分支。
-  - 返回 `state_dir_not_writable`：这是沙箱不允许写状态目录，**不是**另一个进程抢锁。脚本会先尝试 `%TEMP%\MemoFramework` 自动 fallback；仍失败时用 `--state-dir <workspace>/.memo-state` 重试一次，或报 `sync: unavailable · state_dir_not_writable` 后继续制卡，不要求用户开完全权限。
-  - **已经动手才发现漏了 S0**：立刻停下，说明漏了一步，补跑 `sync` 并按结果询问，然后继续；不得隐瞒或假装做过。
-- **每次任务**：先跑 `python scripts/check_updates.py sync`。
-  - 返回 `needs_consent` → 就是首次使用，问上面那一问，不得跳过。
-  - 返回 `done` → 一行带过；有 `updated` 就报「已从已核实仓库更新到 <版本>」。
-  - 返回 `host.result=updated` → 报「主链已从 X 更新到 Y」并**暂停业务**，请用户重启客户端或新开会话；当前会话仍加载旧 SKILL，不能继续用新旧混合状态。`host.result=up_to_date` 一行带过；`host.skipped` / `host.failed` 说明原因，继续旧版本业务。
-  - 返回 `off` → 一行带过，不追问、不重复问。
-  - `partial` 或有 `failed` / `skipped` → 说明哪些没更新、为什么，继续业务；不自动修复安装或循环重试。
-  - 返回 `busy` → 另一个客户端/会话正在同步（状态锁被占用）：说明本次跳过同步，继续业务；不循环重试、不重置授权。
-  - `error` → 按上面的异常分支继续业务。若包含 `sync_report`，保留其中已验证的更新结果，说明状态保存失败，重试前只读核对本地版本；不能声称本次完全没有更新。
-  - `skipped: not_a_git_checkout` 说明该支链是复制安装、不是 git 工作副本：如实说明，给出 `git clone` 的安装方式，不得假装已同步。
-- 同步覆盖**当前主技能自身**和清单里的支链：主技能仅在 git 工作副本、工作区干净、`main` 分支、GitHub HTTPS origin 且可 fast-forward 时更新；支链核对 `origin` 与 `repository_url`，显式拉取 `repository_branch` 并只做 fast-forward。核对候选技能身份、目标版本及更新后的提交；工作区不干净、远端或当前分支不符、不是 git 仓库的一律跳过，不覆盖本地改动。旧版本若还没有 host 自更新逻辑，需要先手动 `git pull` 一次完成 bootstrap，之后由 S0 接管。
-- 业务任务必须继续：同步失败或跳过不影响制卡，但报告里要写清楚。
+- **首次使用**（本机 `sync_mode` 为 `unset`）：先问「要不要开启技能自动同步？① 仅这次同步（不安装自动更新） ② 以后自动帮我同步（安装自动更新需要开启完全权限） ③ 不需要」，等回答。
+  - ①：执行 `sync-consent once`，随后运行 `sync` **一次**；这是唯一由 S0 直接执行更新的选项。
+  - ②：执行 `sync-consent auto`，读取 [references/auto-update.md](references/auto-update.md) 并安装后台任务；安装失败必须报告“自动更新未安装”，可改选①或手动同步。之后 S0 只做 `check`，实际更新交给后台任务。
+  - ③：执行 `sync-consent off`，不检查、不更新。
+  - **所有需要用户选择的地方，统一用当前 Agent 的交互式问题框**；用户没选就不推进；第三项“不需要”会长期关闭同步，用户主动改口前不再询问。
+  - **用户直接给 API key 并要求改卡，同样是业务任务**：先问同步，再动 API。
+  - 脚本不可运行、状态损坏/被锁、授权不能读取或保存：报 `sync: unavailable · <原因>`，本次不同步、不反复询问或重置授权，继续可完成的制卡。
+  - `state_dir_not_writable`：这是沙箱写不了状态目录，不是锁冲突；先尝试 `%TEMP%\MemoFramework` fallback，仍失败用 `--state-dir <workspace>/.memo-state` 或报 unavailable 后继续，不要求完全权限。
+  - **已经动手才发现漏了 S0**：立刻停下补跑，不隐瞒。
+- **每次任务**：
+  - `sync_mode=auto`：运行 `python scripts/check_updates.py check --include-host --manual`。它只读技能文件；状态仍可能记录 `last_checks`。`updates_available` 只报告，实际更新由 `MemoCardestSync` / LaunchAgent 执行；host 有新版时提醒重启，当前会话仍旧。
+  - 如果发现 `updates_available` 但后台任务未安装：只报告，提示安装自动更新或手动 `sync`；不得假装已更新。
+  - `sync_mode=once` 且还有待执行授权：运行 `sync` 一次；`host.result=updated` 时暂停业务并请用户重启/新开会话。
+  - `sync_mode=off`：跳过。
+  - `check` 返回：`up_to_date` 一行带过；`updates_available` 报 host/支链及版本或 commit；`host.skipped` / `host.failed` 说明原因；`partial` / `failed` / `skipped` 说明未更新项；`busy` 说明另一个同步在跑，跳过；`state_dir_not_writable` 按上面的状态目录分支处理；`not_a_git_checkout` 说明是复制安装，给 `git clone` 方式。
+- 更新边界：主技能仅在 git 工作副本、工作区干净、`main`、GitHub HTTPS origin 且可 fast-forward 时更新；支链核对 `origin`、`repository_branch` 并只做 fast-forward；脏工作区、分支不符、非 git 一律跳过。旧版本没有 host 自更新逻辑时，先手动 `git pull` 一次完成 bootstrap。
+- 业务任务必须继续：检查/同步失败或跳过不影响制卡，但报告要写清楚。
 
 ## G0 交付路线、会员状态与凭证
 

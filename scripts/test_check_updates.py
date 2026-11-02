@@ -374,6 +374,34 @@ class GitUpdateTests(unittest.TestCase):
         plain.mkdir()
         self.assertEqual(m.update_host(plain)["reason"], "not_a_git_checkout")
 
+    def test_host_check_is_read_only_and_reports_remote_head(self):
+        source_head = self.git(self.source, "rev-parse", "HEAD")
+        real = self.real_run_git
+
+        def fake(path, *args):
+            if args[:2] == ("ls-remote", "origin"):
+                return 0, source_head + "\trefs/heads/main", ""
+            return real(path, *args)
+
+        before = self.git(self.checkout, "rev-parse", "HEAD")
+        with patch.object(m, "run_git", side_effect=fake):
+            result = m.check_host(self.checkout)
+        self.assertEqual(result["result"], "updates_available")
+        self.assertEqual(result["remote"], source_head)
+        self.assertEqual(self.git(self.checkout, "rev-parse", "HEAD"), before)
+
+    def test_host_check_reports_up_to_date(self):
+        head = self.git(self.checkout, "rev-parse", "HEAD")
+        real = self.real_run_git
+
+        def fake(path, *args):
+            if args[:2] == ("ls-remote", "origin"):
+                return 0, head + "\trefs/heads/main", ""
+            return real(path, *args)
+
+        with patch.object(m, "run_git", side_effect=fake):
+            self.assertEqual(m.check_host(self.checkout)["result"], "up_to_date")
+
 
 class DiscoveryTests(unittest.TestCase):
     def setUp(self):

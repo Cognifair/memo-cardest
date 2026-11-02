@@ -2,6 +2,21 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.9.0 — 2026-11-02
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/auto-update.md, scripts/check_updates.py, scripts/test_check_updates.py)
+
+### 变更
+
+- S0 在 `sync_mode=auto` 下改为只读 `check --include-host --manual`：比较支链版本和主链本地/远端 HEAD，不再由 S0 直接 fetch/merge。
+- 实际更新交给 `MemoCardestSync` / LaunchAgent；后台任务未安装时只报告有新版，提示安装或手动 `sync`。
+- `once` / 用户手动执行仍使用 `sync`，保留一次性更新路径。
+- 新增 `check --include-host`；主链检查通过 `git ls-remote` 只读比较 HEAD，不改技能文件。
+
+### 测试
+
+- updater 65 项、change journal 31 项、resolver 4 项，共 100 项离线测试通过。
+
 ## v1.8.0 — 2026-11-02
 
 影响面：memo-cardest(SKILL.md, README.md, scripts/change_journal.py, scripts/test_change_journal.py, references/change-journal.md, references/api-workflow.md, references/quality-and-troubleshooting.md, references/behavioral-evals.md, version.json, agents/openai.yaml, CHANGELOG.md)

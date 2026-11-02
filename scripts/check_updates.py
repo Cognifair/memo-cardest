@@ -451,6 +451,45 @@ def _apply_update(row, target_version):
     return {"id": row["id"], "result": "updated", "version": version, "commit": commit}
 
 
+def check_host(host_root):
+    """Read-only host check: compare local HEAD with the verified origin branch."""
+    root = Path(host_root)
+    if not (root / ".git").exists():
+        return {"id": "host", "result": "skipped", "reason": "not_a_git_checkout"}
+    code, origin, _ = run_git(root, "remote", "get-url", "origin")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "origin_unavailable"}
+    try:
+        validate_repository_url(origin)
+    except ValueError:
+        return {"id": "host", "result": "skipped", "reason": "remote_not_github"}
+    code, branch, _ = run_git(root, "symbolic-ref", "--quiet", "--short", "HEAD")
+    if code != 0 or branch != "main":
+        return {"id": "host", "result": "skipped", "reason": "branch_mismatch"}
+    code, status, _ = run_git(root, "status", "--porcelain")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "git_status_failed"}
+    if status:
+        return {"id": "host", "result": "skipped", "reason": "dirty_worktree"}
+    code, local, _ = run_git(root, "rev-parse", "HEAD")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "head_invalid"}
+    code, remote_out, _ = run_git(root, "ls-remote", "origin", "refs/heads/main")
+    if code != 0:
+        return {"id": "host", "result": "failed", "reason": "ls_remote_failed"}
+    remote = ""
+    for line in remote_out.splitlines():
+        parts = line.split()
+        if len(parts) >= 2 and parts[1] == "refs/heads/main":
+            remote = parts[0]
+            break
+    if len(remote) != 40 or any(c not in "0123456789abcdef" for c in remote.lower()):
+        return {"id": "host", "result": "failed", "reason": "remote_ref_invalid"}
+    if remote == local:
+        return {"id": "host", "result": "up_to_date", "commit": local}
+    return {"id": "host", "result": "updates_available", "local": local, "remote": remote}
+
+
 def update_host(host_root):
     """Fast-forward the installed host skill itself from its verified GitHub origin."""
     root = Path(host_root)
@@ -783,6 +822,7 @@ def main():
     checking.add_argument("--manual", action="store_true",
                           help="Only for an explicit one-time user request; bypasses auto-check and throttle")
     checking.add_argument("--include-new", action="store_true", help="Explicitly include discovery of new public Memo skills")
+    checking.add_argument("--include-host", action="store_true", help="Also report the host skill's local/remote HEAD without updating")
     discovering = sub.add_parser("discover")
     discovering.add_argument("--manual", action="store_true")
     args = parser.parse_args()
@@ -870,6 +910,8 @@ def main():
                         state["pending_discovery_once"] = False
                 else:
                     output = check_versions(cfg, rows, state, args.manual)
+                    if args.include_host:
+                        output["host"] = check_host(args.skill_root)
                     discovery_requested = (args.include_new or state["auto_discover"]
                                            or (state["pending_discovery_once"] and not args.manual))
                     if discovery_requested:

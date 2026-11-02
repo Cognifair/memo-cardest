@@ -22,7 +22,7 @@
 
 | 步骤 | 内容 | 留痕 |
 |---|---|---|
-| **S0** | 首次开头选择同步偏好；检查主链自身与支链；主链更新后暂停并提示重启 | `sync: auto · host up_to_date · 3 checked · no updates` |
+| **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
 | **G0** | 交付路线与凭证：先用问题框确认 API/TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.5** | 强制表格审查：有真实表格就调用 `memo-table`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-table invoked` |
@@ -70,6 +70,7 @@ S0 选择「以后自动帮我同步」后，需要**完全权限**安装用户�
 - Windows：`scripts\windows\install_sync_task.ps1`
 - macOS：`scripts/macos/install_sync_agent.sh`
 - 两个平台都每 6 小时运行一次，**不检测具体 Agent 进程**，同步所有已安装的 Memo 根目录；
+- S0 在 `auto` 模式下只运行 `check --include-host --manual`，不修改技能文件；实际更新由后台任务执行；
 - 当前会话不会自动重载新版本，更新后需重启/新会话；
 - 安装失败必须明确报告，不得假装已安装。
 
@@ -103,11 +104,25 @@ OCR 支链独立使用不要求 Markji 专业版，也不会自动制卡或上�
 | 行为规范 | [SKILL.md](SKILL.md) | S0–G4 执行顺序、留痕要求、支链与更新政策 |
 | 参考知识 | `references/*.md` | 按需读取：API、TXT、设计工具箱、表格、质检、支链框架、支链清单 |
 | 执行器 | `scripts/check_updates.py` | 本地盘点、启动同步、版本检查、新技能发现；显式拉取远端分支、核验后仅快进合并 |
+| 自动更新 | `scripts/windows/`, `scripts/macos/` | 可选安装用户级定时同步任务；安装需要完全权限 |
 | 自带测试 | `scripts/test_check_updates.py` | 离线验证执行器，不访问真实版本源 |
 | 行为评测 | `references/behavioral-evals.md` | 初始化、凭证路由、知识覆盖、重复执行与媒体场景；与脚本测试分别记录 |
 | 版本标识 | [version.json](version.json) | 供版本检查读取 |
 | 变更记录 | [CHANGELOG.md](CHANGELOG.md) | 每个版本的更新说明 |
 | 界面配置 | `agents/openai.yaml` | 展示名与默认提示词 |
+
+### 入口与引用（v1.7.1 起）
+
+主入口只保留路线选择、强制步骤和安全边界；详细规则按任务读取，不要求每次全部读完。
+
+| 任务 | 先读 |
+|---|---|
+| API 路线 | [references/credentials.md](references/credentials.md) → [references/api-workflow.md](references/api-workflow.md) |
+| TXT 路线 | [references/txt-workflow.md](references/txt-workflow.md) |
+| 发现表格 | [references/table-decision.md](references/table-decision.md) |
+| 批量删除 | [references/batch-delete.md](references/batch-delete.md) |
+| 自动更新安装 | [references/auto-update.md](references/auto-update.md) |
+| 维护/评测 | [references/satellite-framework.md](references/satellite-framework.md)、[references/behavioral-evals.md](references/behavioral-evals.md) |
 
 支链（Memo-MinerUOCR / Memo-Txtimporter / Memo-Table / 迁墨 Memo-Ankitransfer）是**独立技能**，不在本仓库内，也不随本仓库分发。
 
@@ -126,9 +141,9 @@ python -B scripts/check_updates.py <命令>
 | 命令 | 作用 |
 |---|---|
 | `inventory` / `status` | 本地已装支链 / 当前同步与授权状态（只读，不联网） |
-| `sync` | 开局同步：未授权返回 `needs_consent`；`auto`/`once` 时检查并更新主技能与支链 |
+| `sync` | 手动/后台完整同步：未授权返回 `needs_consent`；`auto`/`once` 时检查并更新主技能与支链 |
 | `sync-consent once\|auto\|off` | 记录同步授权（仅这次 / 以后自动 / 不需要）；`auto` 的自动更新安装需要完全权限 |
-| `check [--manual] [--include-new]` | 只读版本检查，可附带新技能发现 |
+| `check [--manual] [--include-new] [--include-host]` | 只读版本检查；`--include-host` 额外比较主技能本地/远端 HEAD |
 | `discover [--manual]` | 只做新技能发现 |
 | `complete --task-id <id>` | 记录一次业务交付，返回缺失能力是否需介绍 |
 | `missing --id <支链> --session-id <会话>` | 记录任务中的缺失提醒 |
