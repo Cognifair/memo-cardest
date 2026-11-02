@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.9.2
+# 墨卡大师 Memo-Cardest v1.9.3
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -48,7 +48,7 @@
 
 一张手写的好卡要同时满足三件事：题面聚焦、只引导一个答案、难度落在「合意困难」那一段。这三件事靠的是写卡人几千次复习攒出来的判断——只有复习到第三个月，才知道这张卡 cue 不 cue 得住。
 
-模型目前做不到。Memory Machines 的实验（Kirkby 与 Matuschak，2026）让前沿模型把划线和原文直接变成记忆卡，评分分布是这样的：
+模型目前做不到。Memory Machines 的实验（Kirkby 与 Matuschak）让前沿模型把划线和原文直接变成记忆卡，评分分布是这样的：
 
 | 模型 | T0 跑偏 | T1 看着合理、几个月后失效 | T2 需打磨 | T3 可直接复习 |
 |---|---|---|---|---|
@@ -56,7 +56,7 @@
 | Gemini 3 Pro | 12% | 34% | 28% | 26% |
 | GPT-5.2 | 10% | 26% | 29% | 35% |
 
-只有四分之一到三分之一能直接进复习。最要命的是 T1——读起来像回事，复习到第三个月才发现它 cue 不住——模型自己也识别不出来：判别「这张卡扛不扛得住」最高 64–67%，从四个候选里挑最好的，仍有 30–40% 挑中坏的那个。
+只有四分之一到三分之一能直接进复习，另有两到三成要打磨一遍才敢用。最要命的是 T1——读起来像回事，复习到第三个月才发现它 cue 不住——模型自己也识别不出来：判别「这张卡扛不扛得住」最高 64–67%，从四个候选里挑最好的，仍有 30–40% 挑中坏的那个。
 
 所以这里把判断交回给你：**用一张样卡把「什么算好」定死，模型只负责复刻。** 报告原文见 [memory-machines.com/report](https://memory-machines.com/report)。
 

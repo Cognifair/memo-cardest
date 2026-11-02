@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.9.3 — 2026-11-02
+
+影响面：memo-cardest(README.md, CHANGELOG.md)
+
+### 修正
+
+- 「为什么是样卡」补上 T2 那一档：报告首页把 T2+T3 记为 usable（GPT-5.2 为 64.3%），只写 T3 的 26–35% 会让读者以为比原文更悲观。
+- 去掉引用里的年份：报告页未写明发布年份，不替它断言。
+
 ## v1.9.2 — 2026-11-02
 
 影响面：memo-cardest(README.md, CHANGELOG.md)
