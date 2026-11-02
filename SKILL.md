@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.7.2"
+  version: "1.8.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.7.2
+# 墨卡大师 Memo-Cardest v1.8.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -79,7 +79,7 @@ metadata:
 - 没有表格 → 记录 `tables: none`，继续 G2；
 - `memo-table` 缺失或调用失败 → 说明缺失，表格卡标“待处理”，继续非表格卡，不假装已生成。
 
-回复留一行：`tables: found(N) → memo-table invoked` / `tables: none` / `tables: user-skip`。判定细节见 [references/table-decision.md](references/table-decision.md)。
+回复留一行：`tables: found(N) → memo-table invoked` / `tables: none` / `tables: user-skip`。在 G1.5 扫描中，对某种结构是否算真实表格、或是否符合 user-skip 条件有疑问时，先读取 [references/table-decision.md](references/table-decision.md) 的对应判定，再决定分类与触发；不得先跳过再补读。
 
 ## G2 读文档（写前必读，自报版本）
 
@@ -101,8 +101,8 @@ metadata:
 
 ## G4 验收与交付
 
-按 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 逐条核对，回复里带勾选结果；未过项标「待验证」，不得写成已完成。
-- API：每次写入后 GET 回读，逐字符比对正文、语法版本、章节归属与数量；写响应不确定先只读核查，禁止盲目重发。
+交付前读取 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 的「发布前检查」并逐条核对；遇到语法或渲染异常时，再读取「根据症状排障」。回复里带勾选结果；未过项标「待验证」，不得写成已完成。
+- API 卡片创建/修改/移动：执行前读取 [references/change-journal.md](references/change-journal.md)，用本地脚本统一记录变更清单与逐项状态；每次写入后独立 GET，归一化字段后运行比对。其余 API 操作沿用原验收；数量、顺序与客户端预览仍需单独核对。写响应不确定先只读核查，禁止盲目重发；脚本不发请求、不自动续跑。
 - 接口成功不等于渲染成功；TXT 生成不等于已导入。没在客户端确认过的写「待客户端预览 / 待导入」，只报告可证实的结果。
 - TXT：交付前按已读的 TXT 交接说明，由 `memo-txtimporter` 运行 `finalize_txt.py` 并交付其输出；教程呈现、省略条件及缺失处理只在该引用维护，未校验不得声称完成。
 - 不把 API key、Cookie、会话 token 写进技能、输出文件、日志、Git、截图或示例。
@@ -116,10 +116,16 @@ metadata:
 ## 支链与更新（按需，不阻塞主线）
 
 核心业务不依赖支链；缺失时只说限制，不伪称已调用。新安装必须用户明确要求且来源已核实；既有支链更新按 S0 保存的授权执行。
-- 扫描件、文档图片、大 PDF 拆分 OCR → `memo-mineruocr`；首次使用先选「本地非 MinerU OCR」或「MinerUOCR 官网云端」，选后者才引导注册取 Token，上传范围单独授权，不从密钥或历史推断。OCR 成功不等于知识覆盖或语法验收；用户仅要求 OCR/转 Markdown 时直接交给该支链，不触发制卡会员询问。
-- TXT 容器 → `memo-txtimporter`，触发与交付边界统一按 G0/G4。表格渲染 → `memo-table`；表格支链缺失时仍可交付普通卡片，说明未生成表格扩展。
-- Anki 图片挖空迁移 → `memo-ankitransfer`（迁墨）；免导出直连本机 Anki（AnkiConnect），原图 + 比例矩形转 `.msk1` 并生成位置预览，同组多矩形按原顺序拆成独立遮罩（墨墨无同组同时揭示）。转换或预览不授权写卡；要写入墨墨仍需目标牌组/章节与凭证，且逐张回读后才算交付。
-- 调用支链时把本次已确认的路线、会员状态和 S0 结果一并交代，支链不再重复初始化或询问；支链返回后仍按 G4 验收。
-- 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。细节见 [references/satellite-framework.md](references/satellite-framework.md) 与 [references/satellites.md](references/satellites.md)。
+
+按任务交给对应技能，并先读取该技能的 SKILL.md；细节由该技能维护：
+- OCR / 文档转 Markdown → `memo-mineruocr`。首次路线选择由它负责；云端上传范围仍须单独授权，不从密钥或历史推断。仅 OCR 不触发制卡会员询问，OCR 成功不等于制卡或语法验收。
+- TXT 容器 → `memo-txtimporter`，按 G0/G4 交接；缺失或失败则停止 TXT 交付，不本地兜底。
+- 真实表格 → `memo-table`，按 G1.5 触发与处理失败；不是可选推荐。
+- Anki 图片挖空迁移 → `memo-ankitransfer`（迁墨）。连接、模板支持与遮罩转换细节由它负责；转换或预览不授权写卡。
+
+调用支链时交接已确认的路线、会员状态和 S0 结果，不重复初始化；实际写入墨墨仍须确认目标牌组/章节与凭证，按 G4 逐张回读并验收。
+- 同步由 S0 负责（默认未授权，首次使用先问）；新支链发现是另一件事，默认关闭，只有用户明确要求才查。
+- 每次业务选择支链时，在调用或安装前读取 [references/satellites.md](references/satellites.md) 核对清单与来源，并用 inventory 核验实际安装状态；清单不等于已安装。
+- 处理同步异常、缺失提醒、新技能发现或安装/更新规则时，在相关动作前读取 [references/satellite-framework.md](references/satellite-framework.md) 的对应章节；普通制卡不默认通读整份框架，常规启动仍按 S0 执行。
 - 安装、维护、测试技能本身不触发推荐或授权询问。
-- 维护本技能时用 [references/behavioral-evals.md](references/behavioral-evals.md) 检查初始化、凭证路由与实际制卡行为；脚本测试通过不等于这些场景或客户端渲染已验证。
+- 维护本技能时，在设计或执行行为验证前读取 [references/behavioral-evals.md](references/behavioral-evals.md)，检查初始化、凭证路由与实际制卡行为；普通制卡不加载该评测说明。脚本测试通过不等于这些场景或客户端渲染已验证。

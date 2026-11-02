@@ -2,6 +2,26 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.8.0 — 2026-11-02
+
+影响面：memo-cardest(SKILL.md, README.md, scripts/change_journal.py, scripts/test_change_journal.py, references/change-journal.md, references/api-workflow.md, references/quality-and-troubleshooting.md, references/behavioral-evals.md, version.json, agents/openai.yaml, CHANGELOG.md)
+
+### 新增
+
+- P0 本地卡片变更清单：稳定键、完整基线与预期、真实 ID 和逐项状态；排他锁与原子文件替换，拒绝覆盖既有任务。
+- P0 写后回读比对：由调用方按实时文档提供独立 GET 的归一化快照，精确检查正文、语法版本与目标身份，输出差异摘要与逐项统计。
+- 写前落盘 uncertain，区分写成功和回读一致；不内置 API 路径、不联网、不读凭证、不自动重试或恢复，不改变 TXT 和原客户端预览要求。
+- 98 项离线测试通过（新增 31 项，原有 67 项）；两项独立模拟行为检查通过，技能结构校验通过。未测试真实账户、实时接口或客户端渲染。
+
+## v1.7.3 — 2026-11-01
+
+影响面：memo-cardest(SKILL.md, CHANGELOG.md, version.json, agents/openai.yaml)
+
+### 优化
+
+- 将 OCR、Anki 等支链的实现介绍收敛为任务路由，要求先读对应技能；保留上传授权、TXT 缺失即停、强制表格触发与写后回读边界。
+- 明确表格判定、交付检查、支链清单、同步框架与行为评测引用的读取时机；不修改自动更新策略、运行时脚本或支链内容。
+
 ## v1.7.2 — 2026-11-01
 
 影响面：memo-cardest(SKILL.md, references/batch-delete.md, CHANGELOG.md, version.json, agents/openai.yaml)
