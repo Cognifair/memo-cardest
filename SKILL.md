@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.10.1"
+  version: "1.11.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.10.1
+# 墨卡大师 Memo-Cardest v1.11.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -78,6 +78,20 @@ metadata:
    材料看不出结构时直接说明，并至少给「整份不切分」选项；不能编造不存在的章节。
 
 两个问题按 S0 的提问约束执行；用户没回答就不生成卡片、不推进后续步骤。
+
+## G1.4 源文件预检 / OCR 路线（强制，早于 G1.5）
+
+在表格审查前，先确认材料能不能读。本地文件运行 `python -B scripts/inspect_source.py "<文件>"`；PDF 没有 `pypdf` 时返回 `unknown`，按未知处理。
+
+- `text_layer=present` → 留痕 `source: text`，继续。
+- `absent` / `sparse`，或纯图片/扫描件 → **停下来问用户**：
+  「这份材料没有文字层/是图片版（N 张图）。要 OCR 吗？① 本地 OCR（不上传、不需要 Token） ② MinerU 云端（识别更好，需上传并消耗额度；Token 已配置/未配置） ③ 先不 OCR（换文件或只做文字部分）」
+- 用户没选就不推进；不要自己跑 Windows OCR 后再补问。
+- 选 OCR 必须调用 `memo-mineruocr`，不在 cardest 里临时实现。说“Token 未配置”前，先运行 `python -B <memo-mineruocr>\scripts\secret_resolver.py MINERU_TOKEN` 核实。
+- OCR 完成后回到 G1.5 检查表格；OCR 成功不等于知识拆解或语法验收。
+- 用户已明确要求 OCR 时仍走 `memo-mineruocr`；留痕 `source: text | image → asked OCR route | local OCR | MinerU`。
+
+细节见 [references/source-preflight.md](references/source-preflight.md)。
 
 ## G1.5 开局表格审查（强制，早于 G2）
 

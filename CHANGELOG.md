@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.11.0 — 2026-11-02
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/source-preflight.md, references/behavioral-evals.md, scripts/inspect_source.py, scripts/test_inspect_source.py)
+
+### 新增
+
+- G1.4 强制源文件预检：识别 PDF/DOCX/图片的文字层，图片版/无文字层必须先问本地 OCR、MinerU 还是先不 OCR。
+- 新增 `scripts/inspect_source.py`：只读检查文字层、图片数量与建议动作；不跑 OCR、不联网。
+- OCR 统一交给 `memo-mineruocr`；说 Token 未配置前先用 resolver 核实；OCR 后仍回到 G1.5 检查表格。
+- 行为评测新增场景 Q：图片版 docx 未先问 OCR。
+
 ## v1.10.1 — 2026-11-02
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md)

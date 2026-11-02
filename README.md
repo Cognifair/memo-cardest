@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.10.1
+# 墨卡大师 Memo-Cardest v1.11.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -126,7 +126,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
 2. **问两类问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、样式来源：你发一张样卡（推荐）/ 用目标牌组首卡 / 按工具箱默认 / 自己描述。用户没回答不往下推进。
-3. **开工。** 遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
+3. **开工。** 先检查源文件有没有文字层：图片版/扫描件会先问你要不要 OCR，不会自己跑一套 OCR；没有文字层时不会假装已经读懂。遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
 最小示例：
 
@@ -169,6 +169,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 | **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
 | **G0** | 交付路线与凭证：先用问题框确认 API / TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
+| **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
 | **G1.5** | 强制表格审查：有真实表格就调用 `memo-table`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-table invoked` |
 | **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期` 或 `tutuji@日期`，不适用时写「不适用」 |
 | **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |
