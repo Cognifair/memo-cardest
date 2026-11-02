@@ -1,29 +1,29 @@
-# 墨卡大师 Memo-Cardest v1.9.1
+# 墨卡大师 Memo-Cardest v1.9.2
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
 ![Agent](https://img.shields.io/badge/agent-Codex%20%7C%20Claude%20Code%20%7C%20WorkBuddy%20%7C%20DSH-4b5563)
 
-**把复习材料拆成一张张能问出问题的卡。**
+**你写一张样卡，它把整份材料按这个口径做完。**
 
-墨墨记忆卡（Markji）的核心制卡技能：拆知识点、设计题面、写卡片正文、按章节排版，最后走官方 OpenAPI 直接写回，或导出一份 UTF-8 TXT 由客户端导入。扫描件和大 PDF 可以先交给 [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) 识别成 Markdown，再进入制卡流程。
+墨墨记忆卡（Markji）的制卡技能：拆知识点、设计题面、写卡片正文、按章节排版，最后走官方 OpenAPI 直接写回，或导出一份 UTF-8 TXT 由客户端导入。扫描件和大 PDF 可以先交给 [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) 识别成 Markdown，再进入制卡流程。
 
 调用名 `$memo-cardest` · [宣传页](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB) · [变更记录](CHANGELOG.md)
 
-它不是「一键把书变成 500 张卡」的那个工具。它会逼你在每张卡上回答一个问题：**这张卡到底要我想起什么？** 答不上来的知识点会被退回重拆，而不是塞进挖空里。
+它不复刻「手写一张好卡」这件事。Anki 社区那种卡——题面聚焦、只引导一个答案、难度落在合意困难那一段——是人的判断，不是模型的判断。所以这里换了个做法：**你把标准做进一张样卡，它负责把标准复制到剩下的每一张上。**
 
 ## 30 秒判断要不要装
 
 | 你的情况 | 结论 |
 |---|---|
-| 有 PDF、笔记或讲义，想变成能主动回忆的卡 | 装 |
+| 已经有一张（或几张）自己认可的样卡，想按这个口径批量出 | 主用法。样卡决定题型、挖空粒度和解释的写法 |
+| 有材料，但还没定样卡，愿意先做一张 | 装。先做一张样卡，再往下批量 |
 | 已经在 Anki 里做图片挖空，想搬成墨墨原生遮罩 | 装，再配 [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) |
 | 只想生成一份 TXT 自己导入，不碰 API | 装。不需要会员，也不需要 API key |
-| 想要「读完整本书，自动出 500 张卡」 | 别装。自动拆出来的卡，题面基本都是糊的 |
 
 ## 长什么样
 
-材料里的一句话：
+一张样卡，加三张同款。材料里的一句话：
 
 > 立方和公式：a³ + b³ = (a + b)(a² − ab + b²)
 
@@ -37,10 +37,28 @@
 | 第二个因式里为什么是 −ab，而不是 +ab？ | 展开时 a·(−ab) 与 b·(a²) 的交叉项要正好抵消；写成 +ab 就消不掉 |
 | 已知 a + b = 3、ab = 2，求 a³ + b³。 | 9。（a² − ab + b² = (a+b)² − 3ab = 3） |
 
+这三张定下来之后，整章的题型、挖空粒度、解释怎么写、章节怎么切，都照它们走。
+
 <!-- 截图位：把成品卡截图放到 docs/images/ 后，把下面这行注释换成真正的图片引用
 ![成品卡示例](docs/images/card-demo.png)
 建议至少两张：一张客户端里的挖空卡，一张带表格的卡。
 -->
+
+## 为什么是样卡，不是自动生成
+
+一张手写的好卡要同时满足三件事：题面聚焦、只引导一个答案、难度落在「合意困难」那一段。这三件事靠的是写卡人几千次复习攒出来的判断——只有复习到第三个月，才知道这张卡 cue 不 cue 得住。
+
+模型目前做不到。Memory Machines 的实验（Kirkby 与 Matuschak，2026）让前沿模型把划线和原文直接变成记忆卡，评分分布是这样的：
+
+| 模型 | T0 跑偏 | T1 看着合理、几个月后失效 | T2 需打磨 | T3 可直接复习 |
+|---|---|---|---|---|
+| Opus 4.5 | 11% | 39% | 21% | 29% |
+| Gemini 3 Pro | 12% | 34% | 28% | 26% |
+| GPT-5.2 | 10% | 26% | 29% | 35% |
+
+只有四分之一到三分之一能直接进复习。最要命的是 T1——读起来像回事，复习到第三个月才发现它 cue 不住——模型自己也识别不出来：判别「这张卡扛不扛得住」最高 64–67%，从四个候选里挑最好的，仍有 30–40% 挑中坏的那个。
+
+所以这里把判断交回给你：**用一张样卡把「什么算好」定死，模型只负责复刻。** 报告原文见 [memory-machines.com/report](https://memory-machines.com/report)。
 
 ## 安装
 
@@ -92,7 +110,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 ## 第一次使用会发生什么
 
 1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
-2. **问两个问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、要不要照第一张卡的样式。用户没回答不往下推进。
+2. **问两个问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、要不要照你给的样卡来做。用户没回答不往下推进。
 3. **开工。** 遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
 最小示例：
@@ -116,6 +134,8 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 **要不要开自动更新？** 可选。开了会装一个用户级的定时任务，每 6 小时检查一次（Windows 任务计划程序 `MemoCardestSync`，macOS LaunchAgent `com.cognifair.memocardest.sync`），需要完全权限；不开就自己 `git pull`。细节见 [references/auto-update.md](references/auto-update.md)。
 
 **和 Anki 是什么关系？** 不是 Anki 的替代品，也不解析 Anki 的牌组。只有 [迁墨](https://github.com/Cognifair/memo-ankitransfer) 这一条支链负责把 Anki 的图片挖空卡转成墨墨原生遮罩。
+
+**不提供样卡能直接做吗？** 能做，但那等于让模型替你定题面，出来的卡要自己一张张改——就是上面那个 26–35% 的状态。给一张样卡带来的差别，比换一个更贵的模型大得多。
 
 ## 使用边界
 
