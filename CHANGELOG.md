@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.10.1 — 2026-11-02
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md)
+
+### 修复
+
+- G1 样式来源改为显式选择：我发样卡 / 目标牌组首卡 / 工具箱默认 / 自己描述；不再在用户没选时静默 fallback 到工具箱。
+- 样卡或首卡读不到源码时停下说明并请用户补样卡，不凭标题猜样式；留痕 `style: sample | deck-first | toolbox | custom`。
+
 ## v1.10.0 — 2026-11-02
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/capability-map.md)

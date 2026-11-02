@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.10.0
+# 墨卡大师 Memo-Cardest v1.10.1
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -125,7 +125,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 ## 第一次使用会发生什么
 
 1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
-2. **问两个问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、要不要照你给的样卡来做。用户没回答不往下推进。
+2. **问两类问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、样式来源：你发一张样卡（推荐）/ 用目标牌组首卡 / 按工具箱默认 / 自己描述。用户没回答不往下推进。
 3. **开工。** 遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
 最小示例：
