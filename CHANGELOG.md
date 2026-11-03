@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.3 — 2026-11-03
+
+影响面：memo-cardest(README.md, CHANGELOG.md)
+
+### 文档
+
+- 将“为什么问题这么多”改为“为什么还要分步提问”，表达必要收敛，而不是问题数量本身。
+
 ## v1.13.2 — 2026-11-03
 
 影响面：memo-cardest(README.md, CHANGELOG.md)

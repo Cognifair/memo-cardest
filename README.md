@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.13.2
+# 墨卡大师 Memo-Cardest v1.13.3
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -135,7 +135,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 正常首次任务先出现同步三选一；TXT 路线不读取 API 凭证、不碰 API key，但仍会问一次专业版/非专业版，用来确定单卡字数上限。
 
-## 为什么问题这么多
+## 为什么还要分步提问
 
 这不是流程冗余，也不是把决策推回给用户。
 
