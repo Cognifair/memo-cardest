@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.11.0
+# 墨卡大师 Memo-Cardest v1.12.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -34,7 +34,7 @@
 | 已经有一张（或几张）自己认可的样卡，想按这个口径批量出 | 主用法。样卡决定题型、挖空粒度和解释的写法 |
 | 有材料，但还没定样卡，愿意先做一张 | 装。先做一张样卡，再往下批量 |
 | 已经在 Anki 里做图片挖空，想搬成墨墨原生遮罩 | 装，再配 [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) |
-| 只想生成一份 TXT 自己导入，不碰 API | 装。不需要会员，也不需要 API key |
+| 只想生成一份 TXT 自己导入，不碰 API | 装。不需要会员即可导入，也不需要 API key；但字数上限按账号区分（专业版 5000 / 非专业版 2000） |
 
 ## 长什么样
 
@@ -136,7 +136,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 ## 常见问题
 
-**要买墨墨会员吗？** TXT 路线不需要；API 路线用官方 OpenAPI 直接写回，需要对应的专业版授权。
+**要买墨墨会员吗？** TXT 路线不需要会员即可导入，但单卡字数上限不同：专业版 5000、非专业版 2000；API 路线用官方 OpenAPI 直接写回，需要对应的专业版授权。
 
 **要 API key 吗？** 只有 API 路线需要。默认读环境变量 `MAIMEMO_TOKEN`，也可以在一次任务里单独指定；本次指定的 key 优先于默认值，验证失败不会自动改用另一个账户。
 
@@ -184,7 +184,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 - 从学习材料确定记忆目标，拆分知识点，设计题面、答案、解释和章节。
 - 核对当前官方 OpenAPI 与语法指南，按实际适用的语法生成卡片正文。
-- 按用户指定路线使用官方 OpenAPI 或制作 UTF-8 TXT；明确要本地文件时不询问会员、不读取凭证。
+- 按用户指定路线使用官方 OpenAPI 或制作 UTF-8 TXT；明确要本地文件时不读取 API 凭证，但仍确认会员状态以决定单卡字数上限。
 - 检查学习覆盖度、正文结构、换行与媒体引用；不把接口成功当作客户端渲染验收。
 - API 卡片操作提供本地变更清单、逐项状态和独立回读比对；接口字段按实时文档提取，脚本不联网、不读取凭证、不自动重试或续跑。说明见 [卡片变更记录](references/change-journal.md)。
 - 需要时配合独立的 OCR、文档导入和表格技能；扩展缺失时说明限制，继续完成可交付部分。

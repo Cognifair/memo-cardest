@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.11.0"
+  version: "1.12.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.11.0
+# 墨卡大师 Memo-Cardest v1.12.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -46,13 +46,15 @@ metadata:
 ## G0 交付路线、会员状态与凭证
 
 - **路线按 S0 的提问约束确认**（写卡/改卡前；用户已在本会话明确回答过、或明确说“只要 TXT/本地交付”时跳过）：
-  「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员；会调用 Memo-Txtimporter 生成容器、校验并附导入教程）」
+  「这次制卡走哪条路线？① 官方 API 直接写入（需要专业版与凭证） ② TXT 文件自行导入（不需要会员即可导入；但单卡字数上限按账号不同，会调用 Memo-Txtimporter 生成容器）」
   即使消息里提到“接入 API”，也要确认一次，不能靠关键词直接推断路线。
-- 选 TXT → **立即读取 [references/txt-workflow.md](references/txt-workflow.md) 并调用 `memo-txtimporter`**，由它负责容器、校验和教程；未安装或调用失败则停止 TXT 交付，不本地兜底。不询问会员、不读取凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
-- 选 API → **读取凭证前先完整读 [references/credentials.md](references/credentials.md)**，按其中的来源顺序、会员判断与保存询问执行；只有用户本次未指定 key 时才用 `scripts/secret_resolver.py` 查默认凭证。
+- 选 TXT → **先确认/询问会员状态**（用户已说明则跳过）：
+  「你的账号是专业版吗？专业版单卡上限 5000 字符，非专业版 2000；我们按 4500 / 1800 控制。」
+  记录 `member: pro|free` 与 `char_limit: 4500|1800`；不知道时先按非专业版 1800，明确说明。然后读取 [references/txt-workflow.md](references/txt-workflow.md)；G3 按上限设计，G4 调用 `memo-txtimporter` 并交接 `--member`。不读取 API 凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
+- 选 API → **读取凭证前先完整读 [references/credentials.md](references/credentials.md)**，按其中的来源顺序、会员判断与保存询问执行；只有用户本次未指定 key 时才用 `scripts/secret_resolver.py` 查默认凭证。API 可用即按专业版 `char_limit: 4500`。
 - **本次指定凭证优先，不静默覆盖或在失败后切换账户；来源或使用权限不明先澄清。** 只配置用户自己的 key，未经明确同意不持久化；不把凭证写进技能、状态、日志或 Git。
 - API 请求前读取 [references/api-workflow.md](references/api-workflow.md)，按实时文档只读验证权限。凭证失败时停止该账户写入，请用户更新凭证或选择 TXT，不自动改走逆向 Web API；会员状态只按凭证说明的依据报告，不重复询问已明确的信息。
-- 确需补问且尚未回答时，等待回答；不得把已经明确的 TXT 请求送进会员询问。
+- TXT 的会员问题只用于字数上限，**不询问/不读取 API 凭证**；已明确回答过就不重复问。API 路线不重复问已由凭证证明的会员状态。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
 
 ## G1 目标与范围
@@ -119,6 +121,7 @@ metadata:
 
 制作前读 [references/design-toolbox.md](references/design-toolbox.md)。
 - 每张卡有能判分的提取目标；长枚举拆总览 + 分项；用户要求完整背诵时保留完整覆盖。
+- **单卡字数**按 `char_limit` 控制：专业版硬上限 4500、软提醒 4000；非专业版硬上限 1800、软提醒 1600。计数按最终写入的原始 content、UTF-16 单元（中文 1、emoji 通常 2，和前端 length 对齐）；超过硬上限必须拆卡，不静默截断。
 - 题面不给答案线索；解释、助记、相关知识放答案面。
 - 避免全篇粗体、彩虹配色、长空格拉线；保证手机宽度与亮暗模式可读。
 - 图片、音频、遮罩、卡片引用只用真实且获授权的对象；不把本地路径、文件名、URL 伪装成 ID，不复用工具箱固定 ID。
@@ -129,7 +132,7 @@ metadata:
 交付前读取 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 的「发布前检查」并逐条核对；遇到语法或渲染异常时，再读取「根据症状排障」。回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API 卡片创建/修改/移动：执行前读取 [references/change-journal.md](references/change-journal.md)，用本地脚本统一记录变更清单与逐项状态；每次写入后独立 GET，归一化字段后运行比对。其余 API 操作沿用原验收；数量、顺序与客户端预览仍需单独核对。写响应不确定先只读核查，禁止盲目重发；脚本不发请求、不自动续跑。
 - 接口成功不等于渲染成功；TXT 生成不等于已导入。没在客户端确认过的写「待客户端预览 / 待导入」，只报告可证实的结果。
-- TXT：交付前按已读的 TXT 交接说明，由 `memo-txtimporter` 运行 `finalize_txt.py` 并交付其输出；教程呈现、省略条件及缺失处理只在该引用维护，未校验不得声称完成。
+- TXT：交付前由 `memo-txtimporter` 运行 `finalize_txt.py --member <pro|free>`；它按同一字数上限（4500/1800）校验并交付教程/结构结果。未指定会员按 free，教程呈现、省略条件及缺失处理只在该技能维护，未校验不得声称完成。
 - 不把 API key、Cookie、会话 token 写进技能、输出文件、日志、Git、截图或示例。
 
 ## 批量删除（DELETE 章交接）

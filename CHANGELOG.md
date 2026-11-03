@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.12.0 — 2026-11-03
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/txt-workflow.md, references/credentials.md, references/capability-map.md, references/behavioral-evals.md)
+
+### 变更
+
+- TXT 路线改为先确认会员状态：专业版单卡上限 5000、非专业版 2000；按更稳的 4500 / 1800 硬上限设计。
+- API 路线由可用凭证视为专业版，使用 4500 上限，不重复询问会员。
+- G3 增加单卡字数硬/软上限；G4 调用 MT 时交接 `--member pro|free`，由 MT 做同一口径的最终校验。
+- 更新 TXT 交接、凭证、能力地图和行为评测，明确“TXT 不读凭证，但仍要确认字数上限”。
+
 ## v1.11.0 — 2026-11-02
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/source-preflight.md, references/behavioral-evals.md, scripts/inspect_source.py, scripts/test_inspect_source.py)
