@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.2 — 2026-11-03
+
+影响面：memo-cardest(README.md, CHANGELOG.md)
+
+### 文档
+
+- README 新增「为什么问题这么多」：说明分步提问是为了把模糊需求收敛成可执行约束，而不是要求用户一开始写完整提示词、让模型靠自觉补细节。
+- 同步修正首次使用说明中的 TXT 会员问题与图表/图像重绘触发描述。
+
 ## v1.13.1 — 2026-11-03
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/visual-brief.md, references/behavioral-evals.md)
