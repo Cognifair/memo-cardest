@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格/图像重绘审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.13.0"
+  version: "1.13.1"
 ---
 
-# 墨卡大师 Memo-Cardest v1.13.0
+# 墨卡大师 Memo-Cardest v1.13.1
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -102,16 +102,17 @@ metadata:
 - 有 → 调用 `memo-canvas`（skill 工具，name=memo-canvas），由它问「原样 / 简单高清化 / 精美重绘」；不在主技能里临时重画，不只拿 OCR 文本替代图形；
 - 没有 → 留痕 `figures: none`，继续 G1.5；
 - 用户明确不处理 → `figures: user-skip`，保留原图并说明，不假装已重绘；
-- **与 G1.5 同时命中时只调用一次 `memo-canvas`**，把表格和图形一起交给它，不重复问两套问题；
+- **与 G1.5 同时命中时只调用一次 `memo-canvas`，但必须分开提问**：先问图片三档，再问表格样式；只问实际存在的类型，不能合成一个模糊问题；
+- 交接时使用 [references/visual-brief.md](references/visual-brief.md) 的结构化清单，要求逐项回报；一项失败不把其他项判失败；
 - 图片版先按 G1.4 OCR，但 OCR 只处理文字；公式/结构/流程图仍要按本步交给 `memo-canvas`。
 
-留痕：`figures: found(N) → memo-canvas invoked` / `figures: none` / `figures: user-skip`；表格和图形同批时记 `visual: tables+figures → single memo-canvas call`。细节见 [references/image-redraw.md](references/image-redraw.md)。
+留痕：`figures: found(N) → memo-canvas invoked` / `figures: none` / `figures: user-skip`；表格和图形同批时记 `visual: tables+figures → single memo-canvas call`。细节见 [references/image-redraw.md](references/image-redraw.md) 与 [references/visual-brief.md](references/visual-brief.md)。
 
 ## G1.5 开局表格审查（强制，早于 G2）
 
 在生成任何卡片前，先扫描本次制作材料（含待修改卡片正文）有没有**真实表格**：Markdown/HTML/LaTeX `array`/Excel/CSV、行列对比表、参数表、表格图片，或卡片里已有的表格结构。
 
-- **发现有表格 → 立即调用 `memo-canvas`**（`skill` 工具，name=memo-canvas），由它推荐/确认样式并生成 PNG 或 LaTeX；不能以“表格简单、可以手写、最后再处理”跳过；若 G1.4.1 已经调用过 `memo-canvas`，复用同一次调用，把表格一起交给它，不重复问；
+- **发现有表格 → 立即调用 `memo-canvas`**（`skill` 工具，name=memo-canvas），由它推荐/确认样式并生成 PNG 或 LaTeX；不能以“表格简单、可以手写、最后再处理”跳过；若 G1.4.1 已经调用过 `memo-canvas`，复用同一次调用，把表格加入 `visual_brief`，但仍然分开问表格样式，不重复问图片三档；
 - 即使准备用 LaTeX 表格，也先经过 `memo-canvas`，不在主技能里临时手写；
 - 表格是扫描图/截图时先确认 OCR 或原图可读；读不清就问，不猜单元格；
 - 用户明确要求不用 `memo-canvas` 时遵从，但记录 `tables: user-skip`，不得静默跳过；

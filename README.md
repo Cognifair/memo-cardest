@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.13.0
+# 墨卡大师 Memo-Cardest v1.13.1
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -26,7 +26,7 @@
 | Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankitransfer`（迁墨） |
 | 墨墨产品使用问题 | “这个设置在哪” | `memo-qahelper` |
 
-批量删除不是独立技能，是主技能内置流程；表格由 G1.5、图像重绘由 G1.4.1 强制触发 `memo-canvas`；两者同时命中时只调用一次。
+批量删除不是独立技能，是主技能内置流程；表格由 G1.5、图像重绘由 G1.4.1 强制触发 `memo-canvas`；两者同时命中时一次调用、分开提问、逐项回报。
 
 ## 30 秒判断要不要装
 
@@ -168,10 +168,10 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 | 步骤 | 内容 | 留痕 |
 |---|---|---|
 | **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
-| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
+| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；TXT 需确认会员以定字数上限；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
-| **G1.4.1** | 强制图像重绘审查：公式图/化学结构/流程图交给 `memo-canvas`，由它问原样/高清/重绘；与表格同批只调用一次 | `figures: found(N) → memo-canvas invoked` |
+| **G1.4.1** | 强制图像重绘审查：公式图/化学结构/流程图交给 `memo-canvas`；与表格同批只调用一次，但图片三档和表格样式分开问、逐项回报 | `figures: found(N) → memo-canvas invoked` |
 | **G1.5** | 强制表格审查：有真实表格就调用 `memo-canvas`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-canvas invoked` |
 | **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期` 或 `tutuji@日期`，不适用时写「不适用」 |
 | **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |

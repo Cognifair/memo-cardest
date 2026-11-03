@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.1 — 2026-11-03
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/visual-brief.md, references/behavioral-evals.md)
+
+### 修正
+
+- 明确图表同批的边界：G1.4.1 与 G1.5 只调用一次 `memo-canvas`，但图片三档和表格样式必须分开提问，不能合成一个模糊问题。
+- 新增 `references/visual-brief.md`：figures/tables 结构化交接、逐项回报、单项失败不拖累全批。
+- 行为评测 R 补充“分开提问 + 逐项回报”，禁止 all-or-nothing。
+
 ## v1.13.0 — 2026-11-03
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/image-redraw.md, references/table-decision.md, references/capability-map.md, references/tables.md, references/design-toolbox.md, references/satellite-framework.md, references/behavioral-evals.md)
