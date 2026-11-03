@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.12.0
+# 墨卡大师 Memo-Cardest v1.13.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -18,14 +18,15 @@
 |---|---|---|
 | 做卡、改卡、操作牌组 | “把这些材料做成卡” | `memo-cardest` |
 | **批量删除卡片** | “把这些卡批量删掉” | **`memo-cardest` 内置 DELETE 章流程** |
-| 表格 | “这张表做成表格卡” | `memo-table` |
+| 表格 | “这张表做成表格卡” | `memo-canvas` |
+| 图像重绘 | “这张公式图/化学结构/流程图保留或重画” | `memo-canvas` |
 | 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txtimporter` |
 | 扫描件 / PDF OCR | “先 OCR 再制卡” | `memo-mineruocr` |
 | 卡片互链 / 目录跳转 | “给这两张卡加双向链接” | `memo-cardlink`（卡跳跳） |
 | Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankitransfer`（迁墨） |
 | 墨墨产品使用问题 | “这个设置在哪” | `memo-qahelper` |
 
-批量删除不是独立技能，是主技能内置流程；表格会由 G1.5 强制触发 `memo-table`。
+批量删除不是独立技能，是主技能内置流程；表格由 G1.5、图像重绘由 G1.4.1 强制触发 `memo-canvas`；两者同时命中时只调用一次。
 
 ## 30 秒判断要不要装
 
@@ -112,7 +113,7 @@ git clone https://github.com/Cognifair/memo-cardest.git <技能目录>/memo-card
 
 ```text
 git clone https://github.com/Cognifair/memo-mineruocr.git
-git clone https://github.com/Cognifair/memo-table.git
+git clone https://github.com/Cognifair/memo-canvas.git
 git clone https://github.com/Cognifair/memo-txtimporter.git
 git clone https://github.com/Cognifair/memo-ankitransfer.git
 git clone https://github.com/Cognifair/memo-qahelper.git
@@ -126,7 +127,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
 2. **问两类问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、样式来源：你发一张样卡（推荐）/ 用目标牌组首卡 / 按工具箱默认 / 自己描述。用户没回答不往下推进。
-3. **开工。** 先检查源文件有没有文字层：图片版/扫描件会先问你要不要 OCR，不会自己跑一套 OCR；没有文字层时不会假装已经读懂。遇到真实表格会强制先调用 `memo-table`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
+3. **开工。** 先检查源文件有没有文字层：图片版/扫描件会先问你要不要 OCR，不会自己跑一套 OCR；没有文字层时不会假装已经读懂。遇到真实表格会强制先调用 `memo-canvas`；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
 最小示例：
 
@@ -170,7 +171,8 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 | **G0** | 交付路线与凭证：先用问题框确认 API / TXT；明确 TXT 不问会员；API 优先用本次指定的 key | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
-| **G1.5** | 强制表格审查：有真实表格就调用 `memo-table`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-table invoked` |
+| **G1.4.1** | 强制图像重绘审查：公式图/化学结构/流程图交给 `memo-canvas`，由它问原样/高清/重绘；与表格同批只调用一次 | `figures: found(N) → memo-canvas invoked` |
+| **G1.5** | 强制表格审查：有真实表格就调用 `memo-canvas`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-canvas invoked` |
 | **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期` 或 `tutuji@日期`，不适用时写「不适用」 |
 | **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |
 | **G4** | 验收与交付：逐条过质检清单，回读比对 | 勾选结果 + 待验证项 |
@@ -189,7 +191,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 - API 卡片操作提供本地变更清单、逐项状态和独立回读比对；接口字段按实时文档提取，脚本不联网、不读取凭证、不自动重试或续跑。说明见 [卡片变更记录](references/change-journal.md)。
 - 需要时配合独立的 OCR、文档导入和表格技能；扩展缺失时说明限制，继续完成可交付部分。
 - 批量删除：AI 只把目标卡移入 `DELETE` 章节并回读核对，最后由用户在客户端手动删除该章。
-- 开局强制审查真实表格；发现表格就调用 `memo-table`，没有才继续普通制卡。
+- 开局强制审查真实表格；发现表格就调用 `memo-canvas`，没有才继续普通制卡。
 - 每次业务任务开局先做一次同步检查（首次会询问授权）：先检查主技能自身，再按已核实仓库更新支链。
 - 旧称 `Memo_Card_Maker` 仅用于识别自然语言意图，不是另一个调用名。
 
@@ -339,7 +341,7 @@ memo-cardest/
 | 技能 | 职责 |
 |---|---|
 | [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) | 扫描件与大 PDF 识别、拆分并合并 Markdown |
-| [墨记表格制作 Memo-Table](https://github.com/Cognifair/memo-table) | 表格图片与 LaTeX array 表格渲染 |
+| [墨兰迪 Memo-Canvas](https://github.com/Cognifair/memo-canvas) | 表格图片与 LaTeX array 表格制作，扫描图像高清化与忠实重绘 |
 | [墨记文档导入 Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | TXT 容器格式、分卡校验与图片回填 |
 | [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) | Anki 图片挖空转墨墨原生遮罩 |
 | [Memo-QAhelper](https://github.com/Cognifair/memo-qahelper) | 墨墨记忆卡使用答疑（官方百科与论坛） |

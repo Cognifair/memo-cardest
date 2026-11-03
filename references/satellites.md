@@ -37,14 +37,14 @@
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-mineruocr/main/version.json"
     },
     {
-      "id": "memo-table",
-      "name": "墨记表格制作 Memo-Table",
-      "capability": "表格图片与 LaTeX array 表格渲染",
+      "id": "memo-canvas",
+      "name": "墨兰迪 Memo-Canvas",
+      "capability": "表格图片与 LaTeX array 表格制作，扫描图像高清化与忠实重绘",
       "install_source": "github_public_repository",
-      "repository_url": "https://github.com/Cognifair/memo-table",
+      "repository_url": "https://github.com/Cognifair/memo-canvas",
       "repository_branch": "main",
       "marketplace_listing": null,
-      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-table/main/version.json"
+      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-canvas/main/version.json"
     },
     {
       "id": "memo-txtimporter",

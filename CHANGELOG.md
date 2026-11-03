@@ -2,6 +2,19 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.0 — 2026-11-03
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/image-redraw.md, references/table-decision.md, references/capability-map.md, references/tables.md, references/design-toolbox.md, references/satellite-framework.md, references/behavioral-evals.md)
+
+### 变更
+
+- MEMO-CARDEST: 图表统一路由到墨兰迪，新增图像重绘检查点。
+
+### 新增
+
+- G1.4.1 图像重绘审查：扫描公式、数学图、化学结构、流程图等交给 `memo-canvas`，由它选择原样/高清化/精美重绘。
+- 表格与图形同时命中时只调用一次 `memo-canvas`，避免重复询问。
+
 ## v1.12.0 — 2026-11-03
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/txt-workflow.md, references/credentials.md, references/capability-map.md, references/behavioral-evals.md)

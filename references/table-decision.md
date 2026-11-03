@@ -8,7 +8,7 @@
 
 - 表格列宽、对齐、手机可读性差；
 - 该用 PNG/LaTeX 的场景被写成纯文本；
-- 用户明确需要表格卡时，没有触发 `memo-table`；
+- 用户明确需要表格卡时，没有触发 `memo-canvas`；
 - 最后在客户端渲染才发现表格错位。
 
 ## 判定：什么算表格
@@ -31,30 +31,30 @@
 
 ```text
 材料里发现表格？
-  ├─ 是 → 调用 memo-table（skill 工具，name=memo-table）
+  ├─ 是 → 调用 memo-canvas（skill 工具，name=memo-canvas）
   │        └─ 由它推荐/确认样式，生成 PNG 或 LaTeX
   │        └─ 把结果纳入卡片正文
   └─ 否 → 记录 tables: none，继续 G2
 ```
 
-- **只要发现表格，就必须先拉起 `memo-table`**，不能以“表格很简单”“我直接写文字”“最后再处理”跳过；
-- 即使打算用 LaTeX 表格，也先让 `memo-table` 给建议/生成，不在主技能里临时手写；
+- **只要发现表格，就必须先拉起 `memo-canvas`**，不能以“表格很简单”“我直接写文字”“最后再处理”跳过；
+- 即使打算用 LaTeX 表格，也先让 `memo-canvas` 给建议/生成，不在主技能里临时手写；
 - 表格是图片/扫描件时，先确认 OCR 或原图能读；读不清就问用户，不猜单元格；
-- 只有用户明确说“不要用 memo-table”或同义要求时才跳过，并记录 `tables: user-skip`；仅指定 LaTeX/三线表不等于禁止该技能，它本来就支持 LaTeX；
-- `memo-table` 未安装或调用失败：说明缺失，表格卡标“待处理”，不要假装已生成；可继续非表格卡。
+- 只有用户明确说“不要用 memo-canvas”或同义要求时才跳过，并记录 `tables: user-skip`；仅指定 LaTeX/三线表不等于禁止该技能，它本来就支持 LaTeX；
+- `memo-canvas` 未安装或调用失败：说明缺失，表格卡标“待处理”，不要假装已生成；可继续非表格卡。
 
 ## 留痕
 
 在回复里保留一行：
 
 ```text
-tables: found(2) → memo-table invoked
+tables: found(2) → memo-canvas invoked
 tables: none
-tables: user-skip（用户明确要求不用 memo-table）
+tables: user-skip（用户明确要求不用 memo-canvas）
 ```
 
 G4 验收时检查：
 
-- 发现的表格是否都经过 `memo-table` 或用户明确指定的替代路线；
+- 发现的表格是否都经过 `memo-canvas` 或用户明确指定的替代路线；
 - 表格图片/LaTeX 是否真实写入，而不是只写在说明里；
 - 客户端渲染是否确认，未确认标“待预览”。
