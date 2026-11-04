@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.4 — 2026-11-04
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/credentials.md, references/behavioral-evals.md)
+
+### 修复
+
+- 明确 API 路线不再询问“专业版/非专业版”：API 可用即按 pro/4500；没有 key 只问/引导配置 key，不把会员状态当 API 前置。
+- 凭证说明删除“没有凭证时问会员”的分支；会员问题严格限定在 TXT 路线、仅用于字数上限。
+- 行为评测新增场景 S：已选 API 又弹专业版问题判失败。
+
 ## v1.13.3 — 2026-11-03
 
 影响面：memo-cardest(README.md, CHANGELOG.md)

@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格/图像重绘审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.13.3"
+  version: "1.13.4"
 ---
 
-# 墨卡大师 Memo-Cardest v1.13.3
+# 墨卡大师 Memo-Cardest v1.13.4
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -51,10 +51,11 @@ metadata:
 - 选 TXT → **先确认/询问会员状态**（用户已说明则跳过）：
   「你的账号是专业版吗？专业版单卡上限 5000 字符，非专业版 2000；我们按 4500 / 1800 控制。」
   记录 `member: pro|free` 与 `char_limit: 4500|1800`；不知道时先按非专业版 1800，明确说明。然后读取 [references/txt-workflow.md](references/txt-workflow.md)；G3 按上限设计，G4 调用 `memo-txtimporter` 并交接 `--member`。不读取 API 凭证、不调用账户 API；报 `delivery: txt（用户选择）`，不把选 TXT 推断成未开通。
-- 选 API → **读取凭证前先完整读 [references/credentials.md](references/credentials.md)**，按其中的来源顺序、会员判断与保存询问执行；只有用户本次未指定 key 时才用 `scripts/secret_resolver.py` 查默认凭证。API 可用即按专业版 `char_limit: 4500`。
+- 选 API → **读取凭证前先完整读 [references/credentials.md](references/credentials.md)**；**不要询问“是不是专业版”**，API 可用即按专业版 `char_limit: 4500`。只有用户本次未指定 key 时才用 `scripts/secret_resolver.py` 查默认凭证；没有 key 就问 key/安全配置，不把会员问题当 API 前置。
 - **本次指定凭证优先，不静默覆盖或在失败后切换账户；来源或使用权限不明先澄清。** 只配置用户自己的 key，未经明确同意不持久化；不把凭证写进技能、状态、日志或 Git。
 - API 请求前读取 [references/api-workflow.md](references/api-workflow.md)，按实时文档只读验证权限。凭证失败时停止该账户写入，请用户更新凭证或选择 TXT，不自动改走逆向 Web API；会员状态只按凭证说明的依据报告，不重复询问已明确的信息。
 - TXT 的会员问题只用于字数上限，**不询问/不读取 API 凭证**；已明确回答过就不重复问。API 路线不重复问已由凭证证明的会员状态。
+- **硬规则**：API 路线不向用户询问“专业版/非专业版”；该问题只在 TXT 路线、且仅用于字数上限。路线尚未确认时先确认路线，不要把会员问题和路线问题混在同一批问题里。
 - 只审查语法或解释设计、不制卡的请求，跳过本关。
 
 ## G1 目标与范围
