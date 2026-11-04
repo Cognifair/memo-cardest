@@ -8,10 +8,10 @@
 | **批量删除卡片** | “把这些卡批量删掉”“清理这些卡” | **`memo-cardest` 内置**：移入 `DELETE` 章，最后由用户手动删章 |
 | 表格 | “这张表做成表格卡”“用 LaTeX 表格” | `memo-canvas`（G1.5 强制触发） |
 | 图像重绘 | “这张公式图/化学结构/流程图保留或重画” | `memo-canvas`（G1.4.1 强制触发） |
-| 生成 TXT 自行导入 | “生成 TXT，我自己导入”“不碰 API” | `memo-txtimporter` |
+| 生成 TXT 自行导入 | “生成 TXT，我自己导入”“不碰 API” | `memo-txt` |
 | 扫描件、PDF、图片 OCR | “先 OCR 再制卡”“这份扫描 PDF 转 Markdown” | `memo-mineruocr` |
 | 卡片互链、目录跳转 | “给这两张卡加双向链接”“目录卡指向详情” | `memo-cardlink`（卡跳跳） |
-| Anki 图片挖空迁墨 | “把 Anki 图片挖空卡迁到墨墨” | `memo-ankitransfer`（迁墨） |
+| Anki 图片挖空迁墨 | “把 Anki 图片挖空卡迁到墨墨” | `memo-ankigo`（迁墨） |
 | 墨墨产品使用问题 | “这个设置在哪”“TXT 怎么导入” | `memo-qahelper` |
 | 自动更新 | “以后自动帮我同步” | `memo-cardest` 的安装器 + 沙箱外任务 |
 

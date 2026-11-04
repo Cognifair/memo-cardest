@@ -47,24 +47,24 @@
       "version_url": "https://raw.githubusercontent.com/Cognifair/memo-canvas/main/version.json"
     },
     {
-      "id": "memo-txtimporter",
-      "name": "墨记文档导入 Memo-Txtimporter",
+      "id": "memo-txt",
+      "name": "墨记文档导入 Memo-TXT",
       "capability": "TXT 容器格式、分卡校验与图片回填",
       "install_source": "github_public_repository",
-      "repository_url": "https://github.com/Cognifair/memo-txtimporter",
+      "repository_url": "https://github.com/Cognifair/memo-txt",
       "repository_branch": "main",
       "marketplace_listing": null,
-      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-txtimporter/main/version.json"
+      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-txt/main/version.json"
     },
     {
-      "id": "memo-ankitransfer",
-      "name": "迁墨 Memo-Ankitransfer",
+      "id": "memo-ankigo",
+      "name": "迁墨 Memo-AnkiGo",
       "capability": "Anki 图片挖空转墨墨原生遮罩",
       "install_source": "github_public_repository",
-      "repository_url": "https://github.com/Cognifair/memo-ankitransfer",
+      "repository_url": "https://github.com/Cognifair/memo-ankigo",
       "repository_branch": "main",
       "marketplace_listing": null,
-      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-ankitransfer/main/version.json"
+      "version_url": "https://raw.githubusercontent.com/Cognifair/memo-ankigo/main/version.json"
     },
     {
       "id": "memo-qahelper",

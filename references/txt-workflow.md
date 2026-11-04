@@ -1,6 +1,6 @@
-# TXT 路线：交给 Memo-Txtimporter
+# TXT 路线：交给 Memo-TXT
 
-选 TXT 后先确认/询问会员状态并记录 `member: pro|free`、`char_limit: 4500|1800`，再调用 `memo-txtimporter`（`skill` 工具，name=memo-txtimporter）。cardest 不本地封装 TXT、不复制容器格式、不自己写导入教程。TXT 的会员问题只用于字数上限，不询问/读取 API 凭证。
+选 TXT 后先确认/询问会员状态并记录 `member: pro|free`、`char_limit: 4500|1800`，再调用 `memo-txt`（`skill` 工具，name=memo-txt）。cardest 不本地封装 TXT、不复制容器格式、不自己写导入教程。TXT 的会员问题只用于字数上限，不询问/读取 API 凭证。
 
 这是 TXT 交接、校验与教程呈现的唯一详细说明：选定 TXT 时读取，交付前按此验收；API 路线不因本文件读取 TXT 教程。
 

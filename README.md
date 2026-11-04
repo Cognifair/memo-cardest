@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.13.4
+# 墨卡大师 Memo-Cardest v1.13.5
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -20,10 +20,10 @@
 | **批量删除卡片** | “把这些卡批量删掉” | **`memo-cardest` 内置 DELETE 章流程** |
 | 表格 | “这张表做成表格卡” | `memo-canvas` |
 | 图像重绘 | “这张公式图/化学结构/流程图保留或重画” | `memo-canvas` |
-| 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txtimporter` |
+| 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txt` |
 | 扫描件 / PDF OCR | “先 OCR 再制卡” | `memo-mineruocr` |
 | 卡片互链 / 目录跳转 | “给这两张卡加双向链接” | `memo-cardlink`（卡跳跳） |
-| Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankitransfer`（迁墨） |
+| Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankigo`（迁墨） |
 | 墨墨产品使用问题 | “这个设置在哪” | `memo-qahelper` |
 
 批量删除不是独立技能，是主技能内置流程；表格由 G1.5、图像重绘由 G1.4.1 强制触发 `memo-canvas`；两者同时命中时一次调用、分开提问、逐项回报。
@@ -34,7 +34,7 @@
 |---|---|
 | 已经有一张（或几张）自己认可的样卡，想按这个口径批量出 | 主用法。样卡决定题型、挖空粒度和解释的写法 |
 | 有材料，但还没定样卡，愿意先做一张 | 装。先做一张样卡，再往下批量 |
-| 已经在 Anki 里做图片挖空，想搬成墨墨原生遮罩 | 装，再配 [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) |
+| 已经在 Anki 里做图片挖空，想搬成墨墨原生遮罩 | 装，再配 [迁墨 Memo-AnkiGo](https://github.com/Cognifair/memo-ankigo) |
 | 只想生成一份 TXT 自己导入，不碰 API | 装。不需要会员即可导入，也不需要 API key；但字数上限按账号区分（专业版 5000 / 非专业版 2000） |
 
 ## 长什么样
@@ -114,8 +114,8 @@ git clone https://github.com/Cognifair/memo-cardest.git <技能目录>/memo-card
 ```text
 git clone https://github.com/Cognifair/memo-mineruocr.git
 git clone https://github.com/Cognifair/memo-canvas.git
-git clone https://github.com/Cognifair/memo-txtimporter.git
-git clone https://github.com/Cognifair/memo-ankitransfer.git
+git clone https://github.com/Cognifair/memo-txt.git
+git clone https://github.com/Cognifair/memo-ankigo.git
 git clone https://github.com/Cognifair/memo-qahelper.git
 ```
 
@@ -169,7 +169,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 **要不要开自动更新？** 可选。开了会装一个用户级的定时任务，每 6 小时检查一次（Windows 任务计划程序 `MemoCardestSync`，macOS LaunchAgent `com.cognifair.memocardest.sync`），需要完全权限；不开就自己 `git pull`。细节见 [references/auto-update.md](references/auto-update.md)。
 
-**和 Anki 是什么关系？** 不是 Anki 的替代品，也不解析 Anki 的牌组。只有 [迁墨](https://github.com/Cognifair/memo-ankitransfer) 这一条支链负责把 Anki 的图片挖空卡转成墨墨原生遮罩。
+**和 Anki 是什么关系？** 不是 Anki 的替代品，也不解析 Anki 的牌组。只有 [迁墨](https://github.com/Cognifair/memo-ankigo) 这一条支链负责把 Anki 的图片挖空卡转成墨墨原生遮罩。
 
 **不提供样卡能直接做吗？** 能做，但那等于让模型替你定题面，出来的卡要自己一张张改——就是上面那个 26–35% 的状态。给一张样卡带来的差别，比换一个更贵的模型大得多。
 
@@ -362,8 +362,8 @@ memo-cardest/
 |---|---|
 | [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) | 扫描件与大 PDF 识别、拆分并合并 Markdown |
 | [墨兰迪 Memo-Canvas](https://github.com/Cognifair/memo-canvas) | 表格图片与 LaTeX array 表格制作，扫描图像高清化与忠实重绘 |
-| [墨记文档导入 Memo-Txtimporter](https://github.com/Cognifair/memo-txtimporter) | TXT 容器格式、分卡校验与图片回填 |
-| [迁墨 Memo-Ankitransfer](https://github.com/Cognifair/memo-ankitransfer) | Anki 图片挖空转墨墨原生遮罩 |
+| [墨记文档导入 Memo-TXT](https://github.com/Cognifair/memo-txt) | TXT 容器格式、分卡校验与图片回填 |
+| [迁墨 Memo-AnkiGo](https://github.com/Cognifair/memo-ankigo) | Anki 图片挖空转墨墨原生遮罩 |
 | [Memo-QAhelper](https://github.com/Cognifair/memo-qahelper) | 墨墨记忆卡使用答疑（官方百科与论坛） |
 | [卡跳跳 Memo-CardLink](https://github.com/Cognifair/memo-cardlink) | 卡片单向跳转、双向互链与 Card 引用审计（原 Memo-Link） |
 <!-- memo-series:end -->

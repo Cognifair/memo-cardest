@@ -2,6 +2,13 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.13.5 — 2026-11-04
+
+影响面：memo-cardest(技能名称、调用示例与系列引用) / memo-ankigo / memo-txt
+
+- 将 Anki 迁移技能标识统一为 `memo-ankigo`，TXT 技能标识统一为 `memo-txt`，更新安装路径与系列引用。
+- 本次仅调整命名与文档；Anki 历史迁移包格式保持兼容。
+
 ## v1.13.4 — 2026-11-04
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/credentials.md, references/behavioral-evals.md)
