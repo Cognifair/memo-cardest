@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.1 — 2026-11-07
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/image-redraw.md)
+
+### 变更
+
+- G1.4.1 从“化学任务才问结构式”改为**每次制卡/改卡先问视觉内容**：表格、统计图/示意图、公式图、化学结构式或反应式。
+- 用户回答“有/不确定”时检查材料并交给 `memo-canvas`；回答“没有”时记 `visual: user-none`，但仍执行 G1.5 表格扫描，不能因用户说没有就跳过明显表格/图形。
+- 纯语法审查可跳过；用户已经说明过时不再问。
+
 ## v1.14.0 — 2026-11-06
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/api-workflow.md, references/behavioral-evals.md, references/change-journal.md, references/image-redraw.md, references/upload-progress.md, scripts/change_journal.py, scripts/upload_task.py, scripts/test_upload_task.py, scripts/test_registry_discovery.py, scripts/fixtures/*)
