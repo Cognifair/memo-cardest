@@ -55,3 +55,7 @@ POST /open/api/v1/markji/decks/{deck}/chapters/{chapter}/cards
 - 修复一张错误卡后再次回读并预览；同一症状一次最小修复仍失败，停止批量并按 tutuji 排障，不循环猜参数。
 
 交付报告区分“已上传”“回读一致”“客户端渲染已验证/待验证”，列出成功、失败和跳过数量，不将部分成功说成全部完成。
+
+## 上传执行与进度登记
+
+生成或执行临时上传脚本前读取 [upload-progress.md](upload-progress.md)，使用 `UploadTask` 和固定示例 `scripts/upload_example.py`，让脚本自动调用清单公共接口。无论前台还是后台，禁止独立维护计数、遗漏 begin 或新建单独通知脚本。章节 GET 须按当前文档请求实际卡片列表；缺少列表不等于卡片不存在，不得用预期值补齐核验快照。

@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格/图像重绘审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.13.5"
+  version: "1.14.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.13.5
+# 墨卡大师 Memo-Cardest v1.14.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -100,6 +100,12 @@ metadata:
 
 在 G1.4 源文件预检后，检查材料（含待改卡片）里有没有**需要保留结构的图**：图片公式、数学图、化学结构/反应式、流程图、框图等。
 
+- **化学相关任务先问结构**：任务涉及化学、有机/无机、反应、分子、结构式、化学键、命名、方程式时，先问一次：
+  「这次材料里有没有化学结构式或反应式？① 有 ② 没有 ③ 不确定，我先检查图片/OCR」
+  - 有 → 按本步交给 `memo-canvas`；
+  - 没有 → 留痕 `figures: chemistry-none`，继续；
+  - 不确定 → 先检查图片/OCR 再决定，不默认有或没有；
+  - 用户已经说明过时不再问。
 - 有 → 调用 `memo-canvas`（skill 工具，name=memo-canvas），由它问「原样 / 简单高清化 / 精美重绘」；不在主技能里临时重画，不只拿 OCR 文本替代图形；
 - 没有 → 留痕 `figures: none`，继续 G1.5；
 - 用户明确不处理 → `figures: user-skip`，保留原图并说明，不假装已重绘；
@@ -142,6 +148,8 @@ metadata:
 - 表格已在 G1.5 触发 `memo-canvas`：按它的样式/输出生成透明 PNG，或按最新指南采用经验证的简短公式表格；HTML 只作本地编辑源，不写进正文。
 
 ## G4 验收与交付
+
+API 上传脚本必须读取 [references/upload-progress.md](references/upload-progress.md)，导入固定模块 `scripts/upload_task.py`。用 `UploadTask` 自动登记任务、绑定会话并记录写请求/回读/重试/结束；优先复用原清单。不另生成通知脚本，不依靠口头报告或自行累计成功数。未知结果保持 uncertain；未接入的旧脚本只能标注兼容检测或进度不可用。
 
 交付前读取 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 的「发布前检查」并逐条核对；遇到语法或渲染异常时，再读取「根据症状排障」。回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API 卡片创建/修改/移动：执行前读取 [references/change-journal.md](references/change-journal.md)，用本地脚本统一记录变更清单与逐项状态；每次写入后独立 GET，归一化字段后运行比对。其余 API 操作沿用原验收；数量、顺序与客户端预览仍需单独核对。写响应不确定先只读核查，禁止盲目重发；脚本不发请求、不自动续跑。

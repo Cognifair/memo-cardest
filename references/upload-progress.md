@@ -15,7 +15,8 @@ from upload_task import UploadTask, WriteResult
 with UploadTask.open(journal_path, execution=adapter.execution_plan) as task:
     outcome = task.execute_write(key, lambda: adapter.send(item), adapter.classify)
     if outcome.kind == 'confirmed':
-        task.verify(key, lambda: adapter.fetch_snapshot(item))
+        current = next(i for i in task.snapshot()['items'] if i['key'] == key)
+        task.verify(key, lambda: adapter.fetch_snapshot(current))
 ```
 
 实际使用参考完整示例，它会用 receipt 后的清单条目及绑定 ID 调用 GET。适配器的 `classify(response)` 返回 `WriteResult('confirmed', real_card_id)`、`WriteResult('rejected')` 或 `WriteResult('uncertain')`。不能仅凭一个任意 HTTP 状态码认定未发生写入；超时、返回丢失、无法解析成功响应、含义不明的 5xx 都不能标明确拒绝。回读失败保留 written/uncertain，不标 verified。
@@ -24,7 +25,16 @@ with UploadTask.open(journal_path, execution=adapter.execution_plan) as task:
 
 ## 登记和恢复
 
-- 目录：`~/.memo-cardest/progress/v1/tasks/<UUID>.json`。记录协议版本、UUID、业务 task_id、根身份摘要、完整目标数量、按顺序关联的清单路径，以及会话、运行 ID、PID、心跳和生命周期。**不保存逐卡状态或独立成功计数**。
+- 目录（按顺序取第一个可写的，脚本与插件共用这套解析）：
+  1. `MEMO_CARDEST_REGISTRY` 指定的目录 —— 只给测试和特殊部署用，普通上传不要设；
+  2. `~/.memo-cardest/progress/v1/tasks/<UUID>.json` —— 旧默认目录，能写就用；
+  3. `<workspace>/.memo-cardest/progress/v1/tasks/<UUID>.json` —— 沙箱里写不了家目录时的正式回退。
+     工作区根取 `MEMO_CARDEST_WORKSPACE`，没有就往上找最近带 `.memo-cardest` 标记的祖先目录，再退回当前目录。
+  插件侧同时读这三处，外加旧的 `<workspace>/.progress/tasks`（历史脚本用过），按任务 UUID 去重：
+  同一个 UUID 出现在多个目录时只算一条，内容不一致时状态里带 `health.conflict: true`。
+- 记录协议版本、UUID、业务 task_id、根身份摘要、完整目标数量、按顺序关联的清单路径，以及会话、运行 ID、PID、心跳和生命周期。**不保存逐卡状态或独立成功计数**。
+- **登记必须落在插件能发现的位置**。`registry=` 参数只能配合 `allow_custom_registry=True` 用于测试；普通脚本传自定义目录会直接抛 `RegistryUnavailable`，不会静默切到一个宿主看不见的目录再声称进度可用。
+- 三处都不可写时，`registry_dir()` 抛 `RegistryUnavailable`，错误里列出试过的路径与处理办法。这发生在**首张卡请求之前**：要么把 `MEMO_CARDEST_REGISTRY` 指到双方都能读写的目录，要么从工作区根目录运行脚本（让回退目录落在工作区里）。不要把登记放在工作区里的任意子目录。
 - 会话优先使用明确传入的 session_id，否则读取 DSH 注入的 `DSH_SESSION_ID`，保留 `session-` 前缀；profile 读取 `DSH_PROFILE_DIR`/`DSH_PROFILE`。缺少会话标记为未绑定，不猜测当前窗口。显式跨会话移交使用 `rebind=True`；它不赋予写卡授权。
 - 同一根清单自动得到稳定 UUID；续传必须复用登记并恢复同一清单，不能为了重跑重新 init。无记录时传未知 UUID 会拒绝。
 - 每 5 秒心跳，插件 15 秒未见心跳标记执行状态未知。后台进程与前台使用相同上下文管理器。必须使用 `with`，或在 finally 中 close；close 不表示成功。

@@ -87,3 +87,7 @@ python -B scripts/change_journal.py report --journal <任务目录>/journal.json
 - `report` 汇总每项和各状态数量，`all_verified` 仅在全部项 verified 时成立；skipped 也不算全部完成。客户端预览始终显示 not_checked，另行报告实际预览结果。
 - 同一 journal 修改有排他锁，整文件临时写入后原子替换。遇 `journal_busy` 停止，不删除活动锁；进程崩溃遗留锁需人工确认无执行者后处理。不是多进程任务调度器，也不承诺突然断电下零数据损失。
 - 若脚本不可用或记录无法落盘，停止依赖它的账户写入；可继续本地草稿，报告限制，不假装完成了记录。
+
+## 固定上传模块与显式重试
+
+临时 API 脚本必须通过 [upload-progress.md](upload-progress.md) 的 `UploadTask` 接入；清单仍是逐卡状态唯一事实来源。`change_journal.mutate()` 为 CLI 和模块提供统一锁、校验、原子写入。新增显式 `retry-rejected --authorize-retry` 仅允许 failed→planned 并保留历史；这不是自动续跑，也不允许重置 uncertain、written 或 mismatch。旧版本“不提供重置”限制对未知结果继续成立；明确拒绝后的获准重试走此专用入口。

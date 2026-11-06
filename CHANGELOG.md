@@ -2,6 +2,20 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.0 — 2026-11-06
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/api-workflow.md, references/behavioral-evals.md, references/change-journal.md, references/image-redraw.md, references/upload-progress.md, scripts/change_journal.py, scripts/upload_task.py, scripts/test_upload_task.py, scripts/test_registry_discovery.py, scripts/fixtures/*)
+
+### 新增
+
+- G1.4.1 化学任务先问「有没有化学结构式或反应式」：有/不确定交给 `memo-canvas`，没有记 `figures: chemistry-none`；不默认化学任务一定有结构，也不把结构只交给 OCR。
+- 新增 `scripts/upload_task.py` 上传任务登记与心跳模块：原子登记、恢复、执行者锁、显式 `retry-rejected`、未知结果不重发；`change_journal.py` 增加共享 `mutate()` 与 `retry-rejected` 原子变更。
+- 上传进度文档补齐注册目录、心跳、会话绑定、换清单、ETA 与安全重试边界。
+
+### 测试
+
+- 更新器 65、变更清单 31、source inspector 5、resolver 4、upload_task 15、注册发现 5，共 125 项离线测试通过。
+
 ## v1.13.5 — 2026-11-04
 
 影响面：memo-cardest(技能名称、调用示例与系列引用) / memo-ankigo / memo-txt

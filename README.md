@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.13.5
+# 墨卡大师 Memo-Cardest v1.14.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -155,6 +155,25 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 这些问题是为了收敛需求，不是为了拖长流程；如果某个问题不影响本次成品，就不应该问。
 
+## 桌面端可选：Memo Studio
+
+[Memo Studio](https://github.com/Cognifair/Memo-Studio-DSH) 是 **DSH 桌面端插件**，不是技能；技术包名仍是 `dsh-memo-skill-island`：
+
+- 顶部一枚胶囊，点开是技能指南；
+- 干活时显示状态、等待选择、上传进度；
+- 只读状态，不执行制卡、上传或账户操作；
+- 不能放进 `skills` 目录，也不适用于 Codex / Claude Code。
+
+当前安装方式：
+
+1. 到 [最新 Release](https://github.com/Cognifair/Memo-Studio-DSH/releases/latest) 下载 `install.cmd` 和 `install.ps1`；
+2. 双击 `install.cmd`，脚本会下载正式版、校验 `SHA256SUMS.txt`、解压到固定目录；
+3. 把脚本复制的命令粘贴到 DSH 桌面端：
+   `plugin_manager install_bundle  target = <脚本输出的 package 路径>`；
+4. 没出现胶囊就重启 DSH。
+
+npm 包 `dsh-memo-skill-island` 已准备发布元数据，尚未正式上架；上架后可以直接在 DSH 里说「把 dsh-memo-skill-island 装上」。它是可选项，不装不影响制卡。
+
 ## 常见问题
 
 **要买墨墨会员吗？** TXT 路线不需要会员即可导入，但单卡字数上限不同：专业版 5000、非专业版 2000；API 路线用官方 OpenAPI 直接写回，需要对应的专业版授权。
@@ -191,7 +210,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 | **G0** | 交付路线与凭证：先用问题框确认 API / TXT；TXT 需确认会员以定字数上限，API 不问会员、只处理凭证 | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
-| **G1.4.1** | 强制图像重绘审查：公式图/化学结构/流程图交给 `memo-canvas`；与表格同批只调用一次，但图片三档和表格样式分开问、逐项回报 | `figures: found(N) → memo-canvas invoked` |
+| **G1.4.1** | 强制图像重绘审查：化学任务先问有没有结构式/反应式；公式图/化学结构/流程图交给 `memo-canvas`，与表格同批只调用一次但分开提问、逐项回报 | `figures: found(N) → memo-canvas invoked` |
 | **G1.5** | 强制表格审查：有真实表格就调用 `memo-canvas`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-canvas invoked` |
 | **G2** | 按路线读文档：平台语法查 tutuji，API 操作查官方定义；纯文本草稿不要求平台文档 | `docs: openapi@日期` 或 `tutuji@日期`，不适用时写「不适用」 |
 | **G3** | 制卡设计：可判分目标、答案面、视觉克制、真实媒体 | — |
@@ -371,3 +390,7 @@ memo-cardest/
 ## License
 
 [MIT](LICENSE) © Cognifair
+
+## API 上传进度（本地新增，尚未发布）
+
+上传脚本使用固定 `UploadTask` 模块自动登记会话和清单，支持后台进度、重启后的观察恢复及明确拒绝后的显式有限重试。逐卡状态仍只保存在 change_journal 清单中，未知结果不会自动重发。接入契约见 [upload-progress.md](references/upload-progress.md)，参考实现见 [upload_example.py](scripts/upload_example.py)。

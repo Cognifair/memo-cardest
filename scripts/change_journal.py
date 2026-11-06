@@ -239,6 +239,10 @@ def apply(journal, action, key, card_id=None, actual=None):
         # Caller must have a definite rejection, NOT a timeout or lost response.
         require(state == "uncertain", "invalid_transition")
         transition(item, "failed")
+    elif action == "retry-rejected":
+        # Explicit caller authorization only; never reset an unknown result.
+        require(state == "failed", "retry_requires_definite_rejection")
+        transition(item, "planned")
     elif action == "skip":
         require(state == "planned", "invalid_transition")
         transition(item, "skipped")
@@ -258,9 +262,28 @@ def report(journal):
                        "verification": item["verification"]} for item in journal["items"]]}
 
 
+def mutate(path, action, key=None, card_id=None, actual=None, plan=None):
+    """Shared, atomic CLI/library mutation. A failed begin must prevent HTTP."""
+    path = Path(path).resolve()
+    require(path.parent.is_dir(), "journal_parent_missing")
+    with locked(path):
+        if action == "init":
+            require(plan is not None, "plan_required")
+            require(not path.exists(), "journal_exists")
+            journal = make_journal(plan)
+        else:
+            require(key is not None, "key_required")
+            journal = validate_journal(read_json(path))
+            apply(journal, action, key, card_id, actual)
+        validate_journal(journal)
+        save(path, journal)
+    return journal
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("init", "begin", "receipt", "verify", "reject", "skip", "report"))
+    parser.add_argument("action", choices=("init", "begin", "receipt", "verify", "reject", "skip", "report", "retry-rejected"))
+    parser.add_argument("--authorize-retry", action="store_true", help="Explicitly permit retry of a definite rejection only")
     parser.add_argument("--journal", required=True)
     parser.add_argument("--plan")
     parser.add_argument("--key")
@@ -273,17 +296,10 @@ def main(argv=None):
         if args.action == "report":
             journal = validate_journal(read_json(path))
         else:
-            with locked(path):
-                if args.action == "init":
-                    require(args.plan is not None, "plan_required")
-                    require(not path.exists(), "journal_exists")
-                    journal = make_journal(read_json(args.plan))
-                else:
-                    require(args.key is not None, "key_required")
-                    journal = validate_journal(read_json(path))
-                    actual = read_json(args.snapshot) if args.snapshot else None
-                    apply(journal, args.action, args.key, args.card_id, actual)
-                save(path, journal)
+            require(args.action != "retry-rejected" or args.authorize_retry, "retry_not_authorized")
+            journal = mutate(path, args.action, args.key, args.card_id,
+                             read_json(args.snapshot) if args.snapshot else None,
+                             read_json(args.plan) if args.plan else None)
         result = report(journal)
         print(json.dumps(result, ensure_ascii=True))
         return 2 if args.action == "verify" and any(
