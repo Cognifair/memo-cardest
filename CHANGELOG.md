@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.2 — 2026-11-07
+
+影响面：memo-cardest(README.md, CHANGELOG.md, companion.json)
+
+### 新增
+
+- 新增 `companion.json`（schema 1）：列出 Memo 系列技能、上传进度协议根目录和 Memo Studio 下载地址，作为两边轻量兼容契约。
+- README 明确：Memo Studio 当前只做技能指南和只读进度，暂不读取 Cardest 版本/状态做检测；契约不是主技能硬依赖。
+
 ## v1.14.1 — 2026-11-07
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/image-redraw.md)

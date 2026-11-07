@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "product": "MemoCardest",
+  "updatedAt": "2026-11-07",
+  "skills": [
+    {
+      "id": "memo-cardest",
+      "name": "墨卡大师",
+      "path": ".",
+      "capability": "制卡、改卡、牌组操作与批量删除",
+      "features": ["制卡", "改卡", "牌组操作", "批量删除（DELETE 章）"]
+    },
+    {
+      "id": "memo-txt",
+      "name": "Memo-TXT",
+      "path": "../memo-txt",
+      "capability": "TXT 容器、校验与导入教程"
+    },
+    {
+      "id": "memo-canvas",
+      "name": "墨兰迪 Memo-Canvas",
+      "path": "../memo-canvas",
+      "capability": "表格、公式图、化学结构与流程图",
+      "aliases": ["memo-table"]
+    },
+    {
+      "id": "memo-mineruocr",
+      "name": "Memo-MinerUOCR",
+      "path": "../memo-mineruocr",
+      "capability": "扫描件与大 PDF OCR"
+    },
+    {
+      "id": "memo-ankigo",
+      "name": "迁墨 Memo-AnkiGo",
+      "path": "../memo-ankigo",
+      "capability": "Anki 图片挖空迁墨"
+    },
+    {
+      "id": "memo-cardlink",
+      "name": "卡跳跳 Memo-CardLink",
+      "path": "../memo-cardlink",
+      "capability": "单向跳转、双向互链与引用审计"
+    },
+    {
+      "id": "memo-qahelper",
+      "name": "Memo-QAhelper",
+      "path": "../memo-qahelper",
+      "capability": "墨墨记忆卡使用答疑"
+    }
+  ],
+  "progress": {
+    "protocol": 1,
+    "root": ".memo-cardest/progress/v1",
+    "note": "相对工作区根目录；写入方是 MemoCardest，读取方是 Memo Studio。"
+  },
+  "studio": {
+    "download": "https://github.com/Cognifair/Memo-Studio-DSH/releases/latest"
+  }
+}
