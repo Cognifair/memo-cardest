@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.3 — 2026-11-09
+
+影响面：memo-cardest(SKILL.md, CHANGELOG.md)
+
+### 变更
+
+- G2 语法边界更新：行内公式 `[E##...]` 由“未验证扩展”改为**已验证可用**——2026-11-09 在真实牌组批量写入并渲染通过；可写在句子中间，只有行首的 `E` 才算独立公式。
+- 公式选项、公式挖空、删除线仍不当全局默认，照旧要求最小样卡实测。
+
 ## v1.14.2 — 2026-11-07
 
 影响面：memo-cardest(README.md, CHANGELOG.md, companion.json)
