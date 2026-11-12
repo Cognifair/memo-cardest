@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.14.3
+# 墨卡大师 Memo-Cardest v1.14.4
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -209,7 +209,7 @@ npm 包 `dsh-memo-skill-island` 已准备发布元数据，尚未正式上架；
 | 步骤 | 内容 | 留痕 |
 |---|---|---|
 | **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
-| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；TXT 需确认会员以定字数上限，API 不问会员、只处理凭证 | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
+| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；**“用 API 查看/读取”只算只读，不算 API 交付**；TXT 需确认会员以定字数上限，API 不问会员、只处理凭证 | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
 | **G1.4.1** | 强制视觉内容确认：每次先问有没有表格/统计图/示意图/公式图/化学结构式/反应式；有或不确定交给 `memo-canvas`，与表格同批只调用一次但分开提问、逐项回报 | `figures: found(N) → memo-canvas invoked` |
