@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.7 — 2026-11-12
+
+影响面：memo-cardest(CHANGELOG.md, references/api-workflow.md, references/batch-delete.md)
+
+### 文档
+
+- 明确移卡接口的官方 `api_bundle.yaml` 仍把 `deck`/`chapter` 标为 required，但实际运行时把 OpenAPI 长 ID 放进 body 会 400 `not a valid ObjectId`；这是 schema 与运行时行为的偏差，不是用户漏传。
+- 移卡以 URL 携带牌组/来源章节、body 只放 `card_ids`/`to_chapter_id` 为可执行契约；不照抄 schema required 列表。
+
 ## v1.14.6 — 2026-11-12
 
 影响面：memo-cardest(CHANGELOG.md, references/api-workflow.md, references/batch-delete.md, references/behavioral-evals.md)

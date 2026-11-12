@@ -36,6 +36,8 @@ POST /open/api/v1/markji/decks/{deck}/chapters/{chapter}/cards
 
 不要把 `deck` / `chapter` 再放入创建请求体。当天官方 `api_bundle.yaml` 仍把这两个字段列为 body required，但实测重复传入官方长 ID 会返回 HTTP 400 / `common_invalid_param`：`deck not a valid ObjectId`、`chapter not a valid ObjectId`；仅移除可选 `order` 并不能解决。**移卡接口同理：body 只放 `card_ids` 和 `to_chapter_id`，不要再塞 `deck`/`chapter`/`deck_id`/`chapter_id`，否则同样 400 `not a valid ObjectId`。** 遇到同一症状，先核对 URL 的真实目标和远端未新增，再在用户已授权的真实样卡上做一次“仅 card”的最小修复，并回读逐字符核对正文、版本与章节归属。此经验只适用于上述创建/移卡接口，不推断更新、媒体或其他接口也应删除其正文 ID 字段；`order` 的插入行为另行验证。
 
+**这是官方 schema 与运行时行为的偏差，不是“用户少传了字段”。** 官方 `api_bundle.yaml` 对移卡仍写着 `deck`、`chapter` 为 required；但用 OpenAPI 长 ID 填进 body 会被 ObjectId 校验拒绝。以实际接口和回读为准，不把 schema 的 required 列表当成可执行契约，也不向用户宣称“官方文档完全正确”。
+
 这类 ObjectId 错误是参数/寻址诊断依据，不足以断言会员未开通、账号无写权限或整个官方 API 不可用；不要猜测内部 ObjectId 或自动改走 Web API。非法 `grammar_version=999` 返回语法错误只能说明到达相应校验，不能证明合法卡片必定保存，也不应未经证据承诺探针绝对无副作用。优先使用已授权的真实样卡并核查远端数量；写响应不确定先查询，禁止盲目重发。
 
 `card.content` 是完整 Markji 语法字符串。媒体卡按当前 tutuji 指南配套使用整数 `card.grammar_version: 3`，与 content 同级；每次核对最新版本要求。旧卡升级语法版本须用完整正文试验并回读，不仅修改媒体片段。
