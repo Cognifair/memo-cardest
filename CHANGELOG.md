@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.6 — 2026-11-12
+
+影响面：memo-cardest(CHANGELOG.md, references/api-workflow.md, references/batch-delete.md, references/behavioral-evals.md)
+
+### 修复
+
+- 明确移卡接口 body 只允许 `card_ids` 和 `to_chapter_id`；把 `deck`/`chapter`/`deck_id`/`chapter_id` 长 ID 塞进 body 会返回 400 `not a valid ObjectId`，与创建接口同类。
+- 批量删除文档补充移卡 URL 已带来源章节、不要重复放长 ID 的说明。
+- 行为评测新增场景 V：移卡 body 塞 deck/chapter 长 ID 判失败。
+
 ## v1.14.5 — 2026-11-12
 
 影响面：memo-cardest(README.md, CHANGELOG.md)

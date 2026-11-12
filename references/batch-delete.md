@@ -41,6 +41,7 @@ Base：`https://open.maimemo.com/open`
 | 建 DELETE 章 | `POST /api/v1/markji/decks/{deck}/chapters`，body：`{"deck":"<deck>","name":"DELETE"}` |
 | 移卡 | `POST /api/v1/markji/decks/{deck}/chapters/{source_chapter}/cards/move`，body：`{"card_ids":["..."],"to_chapter_id":"<DELETE 章 id>"}` |
 
+- **移卡 body 只放 `card_ids` 和 `to_chapter_id`**：`deck`、`chapter`、`deck_id`、`chapter_id` 等长 ID 字段不要放进 body。URL 已经带了牌组和来源章节；多传这些字段会返回 HTTP 400 `not a valid ObjectId`，和创建接口的 `deck/chapter not a valid ObjectId` 是同一类坑。
 - 建章响应取 `data.chapter.id`；
 - 移动响应 200/201 视为提交成功，但仍要重新读章节做核对；
 - 请求间隔约 0.8–1 秒；429 按 15/30/45 秒退避；
