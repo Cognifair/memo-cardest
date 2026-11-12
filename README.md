@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.14.4
+# 墨卡大师 Memo-Cardest v1.14.5
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -157,7 +157,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 
 ## 桌面端可选：Memo Studio
 
-[Memo Studio](https://github.com/Cognifair/Memo-Studio-DSH) 是 **DSH 桌面端插件**，不是技能；技术包名仍是 `dsh-memo-skill-island`：
+[Memo Studio](https://github.com/Cognifair/Memo-Studio-DSH) 是 **DSH 桌面端插件**，不是技能；npm 包名是 `memo-studio-dsh`，旧本地 link 名 `dsh-memo-skill-island` 继续兼容：
 
 - 顶部一枚胶囊，点开是技能指南；
 - 干活时显示状态、等待选择、上传进度；
@@ -172,7 +172,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
    `plugin_manager install_bundle  target = <脚本输出的 package 路径>`；
 4. 没出现胶囊就重启 DSH。
 
-npm 包 `dsh-memo-skill-island` 已准备发布元数据，尚未正式上架；上架后可以直接在 DSH 里说「把 dsh-memo-skill-island 装上」。它是可选项，不装不影响制卡。
+npm 包已发布：`memo-studio-dsh@0.1.9`。可以直接在 DSH 里说「把 memo-studio-dsh 装上」。它是可选项，不装不影响制卡。
 
 两边预留了轻量兼容契约：[companion.json](companion.json)（schema 1），列出 Memo 技能、进度协议根目录和 Studio 下载地址。当前 Studio 只做技能指南和只读进度，**暂不读取 Cardest 版本/状态做检测**；这份契约留给后续对接，不会成为主技能的硬依赖。
 

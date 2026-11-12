@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.5 — 2026-11-12
+
+影响面：memo-cardest(README.md, CHANGELOG.md)
+
+### 文档
+
+- Memo Studio 的 npm 包已发布为 `memo-studio-dsh@0.1.9`；更新桌面端入口的安装说明和旧本地 link 名兼容说明。
+
 ## v1.14.4 — 2026-11-12
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/credentials.md, references/behavioral-evals.md)
