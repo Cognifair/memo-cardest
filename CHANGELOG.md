@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.14.8 — 2026-11-12
+
+影响面：memo-cardest(SKILL.md, CHANGELOG.md, references/upload-progress.md, references/api-workflow.md, references/behavioral-evals.md)
+
+### 修复
+
+- 明确 API 写操作（创建/修改/移动卡片）绕过 `UploadTask` 时，Memo Studio 不会显示任务；这是脚本未登记，不是插件故障。
+- 要求写前接入 `UploadTask`；接不上就停下并告知“本次进度不可见”，不能先写再解释。
+- 只读 GET 不要求登记；章节/牌组/媒体操作也不在卡片上传进度协议内。
+- 行为评测新增场景 W：临时脚本绕过 UploadTask 写卡判失败。
+
 ## v1.14.7 — 2026-11-12
 
 影响面：memo-cardest(CHANGELOG.md, references/api-workflow.md, references/batch-delete.md)

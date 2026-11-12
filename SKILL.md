@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格/图像重绘审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.14.7"
+  version: "1.14.8"
 ---
 
-# 墨卡大师 Memo-Cardest v1.14.7
+# 墨卡大师 Memo-Cardest v1.14.8
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -150,7 +150,7 @@ metadata:
 
 ## G4 验收与交付
 
-API 上传脚本必须读取 [references/upload-progress.md](references/upload-progress.md)，导入固定模块 `scripts/upload_task.py`。用 `UploadTask` 自动登记任务、绑定会话并记录写请求/回读/重试/结束；优先复用原清单。不另生成通知脚本，不依靠口头报告或自行累计成功数。未知结果保持 uncertain；未接入的旧脚本只能标注兼容检测或进度不可用。
+API 上传脚本必须读取 [references/upload-progress.md](references/upload-progress.md)，导入固定模块 `scripts/upload_task.py`。用 `UploadTask` 自动登记任务、绑定会话并记录写请求/回读/重试/结束；优先复用原清单。不另生成通知脚本，不依靠口头报告或自行累计成功数。未知结果保持 uncertain；未接入的旧脚本只能标注兼容检测或进度不可用。**没有接入 `UploadTask` 的 API 写操作，不得声称 Memo Studio 会显示进度；能先接就接，接不上就停下说明“本次卡片操作不会出现在 Studio”，不要把“插件不显示”当成插件故障。**
 
 交付前读取 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 的「发布前检查」并逐条核对；遇到语法或渲染异常时，再读取「根据症状排障」。回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API 卡片创建/修改/移动：执行前读取 [references/change-journal.md](references/change-journal.md)，用本地脚本统一记录变更清单与逐项状态；每次写入后独立 GET，归一化字段后运行比对。其余 API 操作沿用原验收；数量、顺序与客户端预览仍需单独核对。写响应不确定先只读核查，禁止盲目重发；脚本不发请求、不自动续跑。
