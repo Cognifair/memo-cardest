@@ -84,22 +84,25 @@ def _need_decision(plan, args):
         raise ValueError("plan contains internal links; this first apply script does not rewrite links")
 
 
-def _choose_cards(plan, args):
+def _choose_cards(plan, args, existing_hashes=None):
     cards = plan["cards"]
     if args.sample:
         if not cards:
             raise ValueError("plan has no cards")
         return cards[:1]
     if not args.skip_duplicates:
-        return cards
-    seen = set()
-    chosen = []
-    for card in cards:
-        digest = card["content_sha256"]
-        if digest in seen:
-            continue
-        seen.add(digest)
-        chosen.append(card)
+        chosen = cards
+    else:
+        seen = set()
+        chosen = []
+        for card in cards:
+            digest = card["content_sha256"]
+            if digest in seen:
+                continue
+            seen.add(digest)
+            chosen.append(card)
+    if existing_hashes:
+        chosen = [card for card in chosen if card["content_sha256"] not in existing_hashes]
     return chosen
 
 
@@ -107,10 +110,20 @@ def apply_plan(plan, args, token):
     target_id = stable_id(plan["target"]["id"])
     _find_deck(token, target_id)
     _need_decision(plan, args)
-    target_tree = fetch_deck_tree(token, {"id": target_id, "name": plan["target"]["name"]}, include_cards=False)
+    target_tree = fetch_deck_tree(
+        token, {"id": target_id, "name": plan["target"]["name"]},
+        include_cards=bool(getattr(args, "skip_existing", False)),
+    )
+    existing_hashes = set()
+    if getattr(args, "skip_existing", False):
+        for chapter in target_tree["chapters"]:
+            for card in chapter["cards"]:
+                existing_hashes.add(sha256_text(card["content"]))
     chapters = _chapter_map(target_tree)
-    cards = _choose_cards(plan, args)
+    base_cards = _choose_cards(plan, args)
+    cards = _choose_cards(plan, args, existing_hashes)
     created = []
+    skipped_existing = len(base_cards) - len(cards) if getattr(args, "skip_existing", False) and not args.sample else 0
     dry_run = not (args.apply and args.allow_upload)
 
     current_chapter_id = None
@@ -149,7 +162,8 @@ def apply_plan(plan, args, token):
         created[0]["content_matches"] = created[0]["content_sha256"] == cards[0]["content_sha256"]
 
     return {"dry_run": dry_run, "target": plan["target"], "created": created,
-            "skipped_duplicates": len(plan["cards"]) - len(cards) if args.skip_duplicates and not args.sample else 0}
+            "skipped_duplicates": len(plan["cards"]) - len(base_cards) if args.skip_duplicates and not args.sample else 0,
+            "skipped_existing": skipped_existing}
 
 
 def main(argv=None):
@@ -159,6 +173,7 @@ def main(argv=None):
     parser.add_argument("--allow-upload", action="store_true", help="explicit write authorization")
     parser.add_argument("--sample", action="store_true", help="copy exactly one card")
     parser.add_argument("--skip-duplicates", action="store_true", help="keep only the first card of each content hash")
+    parser.add_argument("--skip-existing", action="store_true", help="skip cards whose content hash already exists in the target")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
     plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))

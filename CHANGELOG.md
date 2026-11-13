@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.16.1 — 2026-11-13
+
+影响面：memo-cardest(CHANGELOG.md, README.md, references/merge-decks.md, scripts/merge_apply.py)
+
+### 修复
+
+- 增加 `--skip-existing`：先复制样本再跑全量时，跳过目标牌组中已存在的相同正文，避免样本卡被重复创建。
+- 复制报告分别列出跳过重复和跳过已存在。
+
 ## v1.16.0 — 2026-11-13
 
 影响面：memo-cardest(README.md, CHANGELOG.md, references/merge-decks.md, scripts/merge_apply.py, scripts/test_merge_apply.py)
