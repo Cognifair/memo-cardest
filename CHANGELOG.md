@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.16.2 — 2026-11-13
+
+影响面：memo-cardest(SKILL.md, CHANGELOG.md, references/merge-decks.md)
+
+### 改进
+
+- 牌组合并的目标问题新增「并入其中一个源牌组（由你替我选）」选项，适应用户不在意并到哪一个的情况。
+- 选该选项时按“牌组名更宽 → 章节/卡片更完整 → 第一个源牌组”判断，并明确输出 `target_choice` 与理由，不静默选择。
+
 ## v1.16.1 — 2026-11-13
 
 影响面：memo-cardest(CHANGELOG.md, README.md, references/merge-decks.md, scripts/merge_apply.py)
