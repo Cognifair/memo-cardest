@@ -13,12 +13,14 @@ Usage:
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -38,6 +40,30 @@ AUDIO_RE = re.compile(r"(?:Audio#|\[Audio|\.mp3\b|\.wav\b|\.m4a\b|\.aac\b|\.ogg\
 
 class ApiError(RuntimeError):
     pass
+
+
+_RATE_LOCK = None
+_NEXT_REQUEST_AT = [0.0]
+
+
+def _request_interval():
+    try:
+        return max(0.05, float(os.environ.get("MERGE_REQUEST_INTERVAL", "0.35")))
+    except ValueError:
+        return 0.35
+
+
+def _throttle():
+    global _RATE_LOCK
+    import threading
+    if _RATE_LOCK is None:
+        _RATE_LOCK = threading.Lock()
+    with _RATE_LOCK:
+        now = time.monotonic()
+        wait = max(0.0, _NEXT_REQUEST_AT[0] - now)
+        _NEXT_REQUEST_AT[0] = max(now, _NEXT_REQUEST_AT[0]) + _request_interval()
+    if wait:
+        time.sleep(wait)
 
 
 def sha256_text(value):
@@ -66,30 +92,35 @@ def media_kind(content):
     return kinds
 
 
-def _request_json(url, token, timeout=30, attempts=3):
+def _request_json(url, token, timeout=30, attempts=5, method="GET", body=None):
     headers = {"Authorization": "Bearer " + token, "Accept": "application/json"}
+    payload = None
+    if body is not None:
+        payload = json.dumps(body, ensure_ascii=False).encode("utf-8")
+        headers["Content-Type"] = "application/json"
     last = None
     for attempt in range(attempts):
-        req = urllib.request.Request(url, headers=headers)
+        _throttle()
+        req = urllib.request.Request(url, headers=headers, data=payload, method=method)
         try:
             with urllib.request.urlopen(req, timeout=timeout) as response:
                 raw = response.read().decode("utf-8")
                 return json.loads(raw)
         except urllib.error.HTTPError as error:
-            body = ""
+            body_text = ""
             try:
-                body = error.read().decode("utf-8", "replace")[:500]
+                body_text = error.read().decode("utf-8", "replace")[:500]
             except Exception:
                 pass
-            last = ApiError(f"HTTP {error.code} from {url.split('?')[0]}: {body or error.reason}")
+            last = ApiError(f"HTTP {error.code} from {url.split('?')[0]}: {body_text or error.reason}")
             if error.code in (429, 500, 502, 503, 504) and attempt + 1 < attempts:
-                time.sleep(2 * (attempt + 1))
+                time.sleep(4 * (attempt + 1))
                 continue
             raise last from error
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
             last = ApiError(f"request failed: {error}")
             if attempt + 1 < attempts:
-                time.sleep(1 + attempt)
+                time.sleep(2 * (attempt + 1))
                 continue
             raise last from error
     raise last or ApiError("request failed")
@@ -153,7 +184,57 @@ def resolve_deck(token, value):
     return matches[0]
 
 
-def fetch_deck_tree(token, deck):
+def _fetch_card(token, deck_id, card_id):
+    payload = _request_json(f"{BASE}/decks/{deck_id}/cards/{card_id}", token)
+    card = (payload.get("data") or {}).get("card")
+    if not isinstance(card, dict):
+        raise ApiError(f"card {card_id} response has no data.card")
+    return {
+        "id": stable_id(card.get("id")) or card_id,
+        "root_id": stable_id(card.get("root_id")),
+        "content": str(card.get("content") or ""),
+        "grammar_version": card.get("grammar_version"),
+    }
+
+
+def _fetch_cards(token, deck_id, card_ids, workers=2):
+    card_ids = [stable_id(card_id) for card_id in card_ids if stable_id(card_id)]
+    if not card_ids:
+        return []
+    # The official list-card endpoint is not available; cards are addressed by
+    # the ids carried on each chapter. Keep a small bounded read-only pool.
+    with ThreadPoolExecutor(max_workers=max(1, min(workers, len(card_ids)))) as pool:
+        return list(pool.map(lambda card_id: _fetch_card(token, deck_id, card_id), card_ids))
+
+
+def _normalise_card(card):
+    return {
+        "id": stable_id(card.get("id")),
+        "root_id": stable_id(card.get("root_id")),
+        "content": str(card.get("content") or ""),
+        "grammar_version": card.get("grammar_version"),
+    }
+
+
+def _chapter_cards(token, deck_id, chapter):
+    chapter_id = stable_id(chapter.get("id"))
+    # Official GET /chapters/{chapter} returns the chapter, its chapterset and
+    # its cards in one read. This avoids one rate-limited request per card.
+    payload = _request_json(f"{BASE}/decks/{deck_id}/chapters/{chapter_id}?with_cards=true", token)
+    data = payload.get("data") or {}
+    cards = data.get("cards")
+    if isinstance(cards, list):
+        return [_normalise_card(card) for card in cards if isinstance(card, dict)]
+    embedded = chapter.get("cards")
+    if isinstance(embedded, list) and embedded:
+        return [_normalise_card(card) for card in embedded if isinstance(card, dict)]
+    card_ids = chapter.get("card_ids")
+    if isinstance(card_ids, list):
+        return _fetch_cards(token, deck_id, card_ids)
+    return []
+
+
+def fetch_deck_tree(token, deck, include_cards=True):
     deck_id = stable_id(deck.get("id"))
     if not deck_id:
         raise ValueError("deck has no id")
@@ -163,17 +244,12 @@ def fetch_deck_tree(token, deck):
         chapter_id = stable_id(chapter.get("id"))
         if not chapter_id:
             raise ValueError(f"chapter in {deck_id} has no id")
-        cards = _paginate(token, f"/decks/{deck_id}/chapters/{chapter_id}/cards", "cards")
+        cards = _chapter_cards(token, deck_id, chapter) if include_cards else []
         result.append({
             "id": chapter_id,
             "name": str(chapter.get("name") or "").strip(),
             "order": chapter.get("order"),
-            "cards": [{
-                "id": stable_id(card.get("id")),
-                "root_id": stable_id(card.get("root_id")),
-                "content": str(card.get("content") or ""),
-                "grammar_version": card.get("grammar_version"),
-            } for card in cards],
+            "cards": cards,
         })
     return {"id": deck_id, "name": str(deck.get("name") or "").strip(), "chapters": result}
 
@@ -444,7 +520,7 @@ def build_plan(token, source_values, target_value, route="api", scan_inbound=Fal
         source_decks.append(fetch_deck_tree(token, deck))
     if not source_decks:
         raise ValueError("at least one source deck is required")
-    target_tree = fetch_deck_tree(token, target)
+    target_tree = fetch_deck_tree(token, target, include_cards=False)
     inbound = _inbound_cards(token, list_decks(token), seen) if scan_inbound else None
     return analyze(source_decks, target_tree, route=route, inbound_cards=inbound)
 

@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.15.0
+# 墨卡大师 Memo-Cardest v1.16.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -47,7 +47,10 @@ python -B scripts/merge_plan.py \
 - 目标牌组必须已存在；
 - 有 `--scan-inbound` 时额外扫描外部入链；
 - 输出只读的 `merge-plan.json` 与 `merge-preview.md`；
-- 复制、C 路线匹配与链接重写尚未接入执行脚本，不能宣称已经自动合并。
+- 确认后用 `scripts/merge_apply.py` 复制；不含 `--apply --allow-upload` 时是 dry-run；
+- 图片/音频先加 `--sample` 复制一张并在客户端验收；
+- 有重复卡时需显式 `--skip-duplicates`，否则拒绝执行；
+- 不删除、不移卡；链接重写暂未接入，计划含内部链接时拒绝执行。
 
 详细规则见 [references/merge-decks.md](references/merge-decks.md)。
 

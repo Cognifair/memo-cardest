@@ -167,11 +167,39 @@ C. 自定义
 | 部分写卡失败 | 保留源，回读确认，不删源 |
 | 外部入链未处理 | 删源前警告，不自动删 |
 
+## 执行复制（API 直连）
+
+先确认计划，再执行；不传 `--apply --allow-upload` 时是 dry-run：
+
+```text
+python -B scripts/merge_apply.py \
+  --plan merge-plan.json \
+  --apply --allow-upload
+```
+
+含图片/音频时先复制一张样本：
+
+```text
+python -B scripts/merge_apply.py \
+  --plan merge-plan.json \
+  --sample --apply --allow-upload
+```
+
+重复内容需显式选择：
+
+```text
+--skip-duplicates    每组内容只保留第一张
+（不加则计划含重复卡时拒绝执行）
+```
+
+`merge_apply.py` 只创建章节和卡片，不删除、不移卡、不改名。链接重写暂未接入；计划里出现内部链接时会拒绝执行，避免把断链当成功。
+
 ## 当前实现
 
 - `scripts/merge_plan.py`：只读盘点 + plan/preview；
-- `scripts/test_merge_plan.py`：纯离线测试；
-- 复制、C 匹配、链接重写的执行脚本在后续阶段接入；在接入前不要声称已经能自动合并。
+- `scripts/merge_apply.py`：API 直连复制，支持 dry-run、样本、跳过重复；不删除；
+- `scripts/test_merge_plan.py` / `test_merge_apply.py`：离线测试；
+- C 路线的 TXT 匹配和链接重写仍在后续阶段；计划里出现内部链接时当前不执行。
 
 ## 禁止
 

@@ -2,6 +2,18 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.16.0 — 2026-11-13
+
+影响面：memo-cardest(README.md, CHANGELOG.md, references/merge-decks.md, scripts/merge_apply.py, scripts/test_merge_apply.py)
+
+### 新增
+
+- API 直连复制：`scripts/merge_apply.py` 从 plan 创建目标章节和卡片，默认 dry-run；写操作必须显式 `--apply --allow-upload`。
+- 支持 `--sample` 单张样本验收、`--skip-duplicates` 去重策略；不删除、不移卡、不改名。
+- 计划含内部链接时拒绝执行，避免在链接重写尚未接入时把断链当成功。
+- 增加 4 项离线测试；真实复制不替代客户端媒体验收。
+- 牌组合并仍不执行删除；源牌组由用户验收后手动删除。
+
 ## v1.15.0 — 2026-11-13
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/merge-decks.md, references/behavioral-evals.md, scripts/merge_plan.py, scripts/test_merge_plan.py)
