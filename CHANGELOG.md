@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.15.0 — 2026-11-13
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, references/merge-decks.md, references/behavioral-evals.md, scripts/merge_plan.py, scripts/test_merge_plan.py)
+
+### 新增
+
+- 增加牌组合并只读计划：`scripts/merge_plan.py` 读取源/目标牌组、章节和卡片，分类内部链接、外部出链、外部入链，统计重复卡、同名章节、空章节、图片/音频样本，生成 `merge-plan.json` 与 `merge-preview.md`。
+- 增加 `references/merge-decks.md`：目标牌组由用户创建、API 不能建牌组、纯 TXT 不能修链接、C 路线、检查点与“不删除源牌组”的硬边界。
+- 增加行为评测场景 X：合并时先删源、自动建牌组、自动去重或未验收提示删源均判失败。
+- 当前阶段只读；复制、C 路线匹配和链接重写尚未接入执行脚本，不宣称已自动合并。
+
 ## v1.14.8 — 2026-11-12
 
 影响面：memo-cardest(SKILL.md, CHANGELOG.md, references/upload-progress.md, references/api-workflow.md, references/behavioral-evals.md)

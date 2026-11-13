@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.14.8
+# 墨卡大师 Memo-Cardest v1.15.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -18,6 +18,7 @@
 |---|---|---|
 | 做卡、改卡、操作牌组 | “把这些材料做成卡” | `memo-cardest` |
 | **批量删除卡片** | “把这些卡批量删掉” | **`memo-cardest` 内置 DELETE 章流程** |
+| **合并两个牌组** | “把这两个牌组合并到一起” | **`memo-cardest` 的 `merge-decks` 流程；先只读计划，复制阶段后续接入** |
 | 表格 | “这张表做成表格卡” | `memo-canvas` |
 | 图像重绘 | “这张公式图/化学结构/流程图保留或重画” | `memo-canvas` |
 | 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txt` |
@@ -27,6 +28,28 @@
 | 墨墨产品使用问题 | “这个设置在哪” | `memo-qahelper` |
 
 批量删除不是独立技能，是主技能内置流程；表格由 G1.5、图像重绘由 G1.4.1 强制触发 `memo-canvas`；两者同时命中时一次调用、分开提问、逐项回报。
+
+### 牌组合并（当前为只读计划阶段）
+
+用户先说“合并牌组”时，先只读盘点，不写卡、不删除：
+
+```text
+python -B scripts/merge_plan.py \
+  --source <源牌组 ID 或准确名字> \
+  --source <另一个源牌组> \
+  --target <已存在的目标牌组 ID 或准确名字> \
+  --route api \
+  --output merge-plan.json \
+  --preview merge-preview.md
+```
+
+- 新牌组由用户在客户端创建，API 不能建牌组；
+- 目标牌组必须已存在；
+- 有 `--scan-inbound` 时额外扫描外部入链；
+- 输出只读的 `merge-plan.json` 与 `merge-preview.md`；
+- 复制、C 路线匹配与链接重写尚未接入执行脚本，不能宣称已经自动合并。
+
+详细规则见 [references/merge-decks.md](references/merge-decks.md)。
 
 ## 30 秒判断要不要装
 
