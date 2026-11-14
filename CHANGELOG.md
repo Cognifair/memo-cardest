@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.16.3 — 2026-11-14
+
+影响面：memo-cardest(CHANGELOG.md, references/behavioral-evals.md)
+
+### 测试
+
+- 行为评测新增场景 Y：表格依赖缺失后复制 CSS、自写 HTML、用 Python Playwright 截图，或删标题/改宽改字号后先出图再问用户，均判失败。
+- 对应 memo-canvas v2.1.2 的表格默认参数硬约束与 `doctor --require table`。
+
 ## v1.16.2 — 2026-11-13
 
 影响面：memo-cardest(SKILL.md, CHANGELOG.md, references/merge-decks.md)
