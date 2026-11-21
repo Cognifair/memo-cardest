@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.17.0 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
+
+### 新增
+
+- 公式卡交付前检查：`scripts/check_formulas.py cards.json`，报告 `$` 残留、未闭合公式、空公式、悬挂运算符、花括号不平衡和已知 OCR 可疑形态。
+- 公式先占位再解析；标题、items、要点、易错、答案、备注统一走同一修复流程。
+- 明确公式卡不能用脚本通过代替客户端渲染验收；可疑公式没有原图证据时标“待核对”，不猜补。
+
 ## v1.16.3 — 2026-11-14
 
 影响面：memo-cardest(CHANGELOG.md, references/behavioral-evals.md)

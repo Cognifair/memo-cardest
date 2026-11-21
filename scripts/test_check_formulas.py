@@ -1,0 +1,56 @@
+import json
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts" / "check_formulas.py"
+
+
+class FormulaCheckerTests(unittest.TestCase):
+    def run_cards(self, cards):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "cards.json"
+            path.write_text(json.dumps(cards), encoding="utf-8")
+            return subprocess.run([sys.executable, "-B", str(SCRIPT), str(path)],
+                                  capture_output=True, text=True)
+
+    def test_clean_formula(self):
+        result = self.run_cards([{
+            "key": "B-1-1",
+            "title": "已知 [E##f(t)=e^{-t}u(t)]",
+            "content": "---\n① [E##f(t)=e^{-t}u(t)] 是因果信号\n",
+        }])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("issues: 0", result.stdout)
+
+    def test_trailing_operator_and_unclosed(self):
+        result = self.run_cards([{
+            "key": "B-2-1",
+            "content": "---\n① [E##r(t) =] 全响应\n② [E##x(t)= 未完\n",
+        }])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("trailing_operator", result.stdout)
+        self.assertIn("unclosed_formula", result.stdout)
+
+    def test_conjugate_star_is_not_trailing_operator(self):
+        result = self.run_cards([{
+            "key": "B-6-1",
+            "content": "---\n① [E##z^*] 是共轭\n",
+        }])
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_dollar_and_suspicious(self):
+        result = self.run_cards([{
+            "key": "B-1-2",
+            "content": "① 样本值 [E##\\{f(y)\\}]；残留 $x$；[E##e^{N f \\omega \\tau}]",
+        }])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("dollar_residue", result.stdout)
+        self.assertIn("suspicious_formula", result.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
