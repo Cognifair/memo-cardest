@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.17.1 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, references/formula-cards.md, version.json, CHANGELOG.md, README.md, agents/openai.yaml)
+
+### 规则
+
+- 纯公式行整行只放一个 `[E##...]`，不再拆成多个公式片段；
+- 行内公式保留在句子中，不把整句中文塞进公式；
+- 公式 + 中文说明时，中文放在公式外。
+
 ## v1.17.0 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
