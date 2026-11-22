@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.19.0 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/wrap_formula_lines.py, scripts/test_wrap_formula_lines.py, scripts/test_check_formulas.py)
+
+### 新增
+
+- `wrap_formula_lines.py` 默认改为 v1.3 结构：`[E##[F#n#块] \allowbreak [F#n#块] ...]`。
+- `\allowbreak` 放在同组 F# 标签**之间**的公式顶层；避免放进单个 F# 内部导致不折行。
+- 新增 `--mode formula` 作为不挖空的纯公式整行包裹。
+- 检查器区分 v1.2 的“F# 内部 allowbreak”与 v1.3 的合法顶层断点。
+
 ## v1.18.1 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/wrap_formula_lines.py, scripts/test_wrap_formula_lines.py)

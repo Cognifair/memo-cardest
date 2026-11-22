@@ -54,7 +54,7 @@ def inspect_card(card: dict, index: int) -> list[dict]:
             issues.append({"key": key, "field": field, "kind": "dollar_residue",
                            "snippet": text[:180]})
         for line in text.splitlines():
-            if "[E##[F#" in line and r"\allowbreak" in line:
+            if re.search(r"\[F#\d+#[^\]]*\\allowbreak", line):
                 issues.append({"key": key, "field": field,
                                "kind": "nested_cloze_allowbreak",
                                "snippet": line[:180]})

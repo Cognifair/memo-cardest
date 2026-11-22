@@ -30,10 +30,10 @@ class WrapFormulaLinesTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         card = json.loads(output)[0]
         wrapped = card["content_wrapped"]
-        self.assertIn("① [E##", wrapped)
+        self.assertIn("① [E##[F#1#", wrapped)
+        self.assertIn(r"] \allowbreak [F#1#", wrapped)
         self.assertIn(r"\text{", wrapped)
-        self.assertIn(r"\allowbreak", wrapped)
-        self.assertIn("② [E##", wrapped)
+        self.assertIn("② [E##[F#2#", wrapped)
         self.assertIn("[T#B,!36b59d# 测试 ]", wrapped)
 
     def test_splits_math_at_top_level_comma(self):
@@ -47,15 +47,16 @@ class WrapFormulaLinesTests(unittest.TestCase):
         self.assertIn(r"b=2", wrapped)
         self.assertIn(r"\allowbreak", wrapped)
 
-    def test_cloze_mode_does_not_pretend_to_wrap(self):
+    def test_formula_mode_has_no_cloze(self):
         result, output = self.run_wrap([{
             "key": "B-1-4",
             "content": "---\n① [T#B#要点]信号是 [E##f(t)] 的函数\n",
-        }], ["--mode", "cloze"])
+        }], ["--mode", "formula"])
         self.assertEqual(result.returncode, 0, result.stderr)
         wrapped = json.loads(output)[0]["content_wrapped"]
-        self.assertIn("[E##[F#1#", wrapped)
-        self.assertNotIn(r"\allowbreak", wrapped)
+        self.assertIn("[E##", wrapped)
+        self.assertNotIn("[F#", wrapped)
+        self.assertIn(r"\allowbreak", wrapped)
 
     def test_rejects_image_tags(self):
         result, _ = self.run_wrap([{

@@ -154,21 +154,24 @@ def text_latex(text: str, bold: bool, width: int, bold_color: str) -> list[str]:
     return parts
 
 
-def build_latex(line: str, width: int, bold_color: str, allowbreak: bool = True) -> str:
+def build_parts(line: str, width: int, bold_color: str) -> list[str]:
     parts = []
     for kind, value in runs_of(line):
         if kind == "math":
             parts.extend(split_math(value))
         else:
             parts.extend(text_latex(value, kind == "bold", width, bold_color))
-    separator = r" \allowbreak " if allowbreak else " "
-    return separator.join(part for part in parts if part.strip())
+    return [part for part in parts if part.strip()]
+
+
+def build_latex(line: str, width: int, bold_color: str) -> str:
+    return r" \allowbreak ".join(build_parts(line, width, bold_color))
 
 
 def wrap_content(content: str, width: int = 8, bold_color: str = DEFAULT_BOLD_COLOR,
-                 mode: str = "formula"):
-    if mode not in {"formula", "cloze"}:
-        raise ValueError("mode must be formula or cloze")
+                 mode: str = "v13"):
+    if mode not in {"v13", "formula"}:
+        raise ValueError("mode must be v13 or formula")
     if content.startswith("---\n"):
         head, separator, body = "", "---\n", content[4:]
     else:
@@ -184,13 +187,15 @@ def wrap_content(content: str, width: int = 8, bold_color: str = DEFAULT_BOLD_CO
             if rest.startswith("[E##[F#"):
                 output.append(line)
                 continue
+            parts = build_parts(rest, width, bold_color)
             if mode == "formula":
-                latex = build_latex(rest, width, bold_color, allowbreak=True)
-                output.append(f"{marker} [E##{latex}]")
+                inner = r" \allowbreak ".join(parts)
+                output.append(f"{marker} [E##{inner}]")
             else:
-                # Nested cloze cannot wrap with \allowbreak; keep it short and explicit.
-                latex = build_latex(rest, width, bold_color, allowbreak=False)
-                output.append(f"{marker} [E##[F#{groups}#{latex}]]")
+                # v1.3: every part is a same-group cloze; allowbreak stays at
+                # the formula top level, between cloze tags.
+                inner = r" \allowbreak ".join(f"[F#{groups}#{part}]" for part in parts)
+                output.append(f"{marker} [E##{inner}]")
         else:
             output.append(line)
     return head + separator + "\n".join(output), groups
@@ -203,8 +208,8 @@ def main(argv=None) -> int:
     parser.add_argument("--field", default="content")
     parser.add_argument("--output-field", default="content_wrapped")
     parser.add_argument("--width", type=int, default=8)
-    parser.add_argument("--mode", choices=["formula", "cloze"], default="formula",
-                        help="formula: [E##...] supports allowbreak wrapping; cloze: [E##[F#n#...]], cannot wrap")
+    parser.add_argument("--mode", choices=["v13", "formula"], default="v13",
+                        help="v13: same-group cloze tags with top-level allowbreak; formula: pure [E##...] with allowbreak")
     parser.add_argument("--bold-color", default=DEFAULT_BOLD_COLOR)
     args = parser.parse_args(argv)
     if not 4 <= args.width <= 40:

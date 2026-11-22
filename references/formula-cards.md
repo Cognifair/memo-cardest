@@ -45,29 +45,30 @@
 python -B scripts/wrap_formula_lines.py cards.json --output cards_wrapped.json
 ```
 
-默认是 `--mode formula`，输出：
+输出写进 `content_wrapped`，不覆盖原 `content`。
+
+> 必须在**尚未整行包裹**的原始正文上运行；已经包含 `[E##[F#` 的行会被跳过，避免重复套娃。
+
+默认是 `--mode v13`，输出：
 
 ```text
-① [E##\text{...} \allowbreak ...]
+① [E##[F#1#\text{第一块}]\allowbreak[F#1#\text{第二块}]\allowbreak f(t)\allowbreak[F#1#\text{第三块}]]
 ```
 
-它支持 `\allowbreak` 换行。
+### 关键点
 
-### 关键限制
+- **同一个 `F#n` 组**包住每一小块；
+- `\allowbreak` 放在 **F# 标签之间的公式顶层**；
+- 不要写成 `[E##[F#n#... \allowbreak ...]]`，断点在挖空内部时不会换行；
+- 公式块也可以单独放进同组 F#，保证整条答案被藏住；
+- `--mode formula` 是纯公式、不挖空，只用于不需要挖空的整行公式。
+
+### 已验证的边界
 
 ```text
-[E## ... ]            支持 \allowbreak 自动换行
-[E##[F#n# ... ]]      嵌套挖空，不能再依赖 \allowbreak 换行
+[F#n#...] 内不能再嵌 [E##...]  ｜ 会把挖空提前闭合
+[E##...] 内多个同组 F#[n]  ｜ 顶层 allowbreak 可折行
 ```
-
-所以不要把“整行包裹”默认写成 `[E##[F#n#...]]`。
-如果还要挖空，只能：
-
-1. 用 `--mode cloze` 输出短行，并人工保证一行放得下；
-2. 或拆成多个更短的 `[F#n#...]` 组，不要指望公式内部自动换行；
-3. 或改用纯公式 `[E##...]`，放弃这一处挖空。
-
-`--mode cloze` 不会插入 `\allowbreak`，因为它没有换行效果。
 
 其他规则：
 
@@ -77,7 +78,7 @@ python -B scripts/wrap_formula_lines.py cards.json --output cards_wrapped.json
 - 公式按顶层逗号拆开，不切断括号、上下标和 `\{ \}`；
 - `[T#B#...]` 转成红色加粗文本；
 - 图片、选择题、卡片引用等标签报错，需先拆到公式外；
-- 生成后必须在真实客户端抽查公式嵌套、断点和移动端行宽。
+- 生成后必须在真实客户端抽查同组挖空、`\allowbreak` 断点和移动端行宽。
 
 这是“整行包裹”的可重复路径；不要为每张卡临时改脚本。
 
