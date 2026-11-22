@@ -13,6 +13,8 @@ import re
 import sys
 from pathlib import Path
 
+CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
+CLOZE = re.compile(r"\[F#\d+#[^\]]*\]")
 FORMULA = re.compile(r"\[E##(.*?)\]", re.S)
 UNCLOSED = re.compile(r"\[E##[^\]]*$", re.S)
 TRAILING_OPERATOR = re.compile(r"[+\-*/=<>]\s*$")
@@ -60,6 +62,22 @@ def inspect_card(card: dict, index: int) -> list[dict]:
                 issues.append({"key": key, "field": field,
                                "kind": "nested_cloze_allowbreak",
                                "snippet": line[:180]})
+            if line and line[0] in CIRCLED and "[F#" in line:
+                rest = line[1:].lstrip()
+                if rest.startswith("[E##"):
+                    rest = rest[4:]
+                    if rest.endswith("]"):
+                        rest = rest[:-1]
+                if re.search(r"\[F#\d+#[^\]]*\[E##", rest):
+                    issues.append({"key": key, "field": field,
+                                   "kind": "nested_formula_in_cloze",
+                                   "snippet": line[:180]})
+                cleaned = CLOZE.sub("", rest).replace("\\allowbreak", "")
+                cleaned = re.sub(r"[\s{}]+", "", cleaned)
+                if cleaned:
+                    issues.append({"key": key, "field": field,
+                                   "kind": "cloze_leak_outside",
+                                   "snippet": cleaned[:180]})
         if UNCLOSED.search(text):
             issues.append({"key": key, "field": field, "kind": "unclosed_formula",
                            "snippet": text[:180]})

@@ -82,6 +82,44 @@ python -B scripts/wrap_formula_lines.py cards.json --output cards_wrapped.json
 
 这是“整行包裹”的可重复路径；不要为每张卡临时改脚本。
 
+## 挖空泄漏检查
+
+挖空失败通常不是公式错，而是答案内容漏在 `[F#]` 外面。
+
+### 硬规则
+
+```text
+[F#n#...] 里不能再出现 [E##...]
+```
+
+公式的 `]` 会提前关闭挖空，后面的公式和文字会裸奔。
+
+### 每条答案必须满足
+
+- 整条答案的所有内容块都在同一个 `F#n` 组里；
+- 只有行首编号和 `\allowbreak` 可以留在 F# 外面；
+- 不能出现“文字被挖空，公式露着”；
+- 不能出现 `① [F#1#文字] 后面这句没包住`；
+- `[` `]` 必须写成 `\lbrack` / `\rbrack`；
+- `\text{}` 里的 `% & # _` 必须转义；
+- 已经部分包裹的卡不能直接跳过，要确认是否 v1.2 残留。
+
+### 检查器
+
+```text
+python -B scripts/check_formulas.py cards.json
+```
+
+相关报错：
+
+```text
+nested_formula_in_cloze   F# 里套了 E##
+cloze_leak_outside        答案文字/公式漏在 F# 外
+nested_cloze_allowbreak   v1.2 的断点塞在单个 F# 内部
+```
+
+API 回读一致只能证明正文写进去了，不能证明挖空真的藏住；必须客户端点开看。
+
 ## 生成前
 
 1. 先把所有公式替换成占位符（如 `[[F0]]`），再处理分段、标题、编号和 Markji 标签；最后回填公式。

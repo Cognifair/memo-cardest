@@ -55,6 +55,20 @@ class FormulaCheckerTests(unittest.TestCase):
         self.assertEqual(bad.returncode, 1)
         self.assertIn("invalid_formula_color", bad.stdout)
 
+    def test_cloze_leaks_outside_or_nested(self):
+        outside = self.run_cards([{
+            "key": "B-1-8",
+            "content": "---\n① [F#1#\\text{答案}] 这句漏在挖空外\n",
+        }])
+        self.assertEqual(outside.returncode, 1)
+        self.assertIn("cloze_leak_outside", outside.stdout)
+        nested = self.run_cards([{
+            "key": "B-1-9",
+            "content": "---\n① [F#1#文字 [E##x=1]]\n",
+        }])
+        self.assertEqual(nested.returncode, 1)
+        self.assertIn("nested_formula_in_cloze", nested.stdout)
+
     def test_nested_cloze_allowbreak_rejected(self):
         result = self.run_cards([{
             "key": "B-1-4",

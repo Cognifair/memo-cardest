@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.20.1 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
+
+### 修复
+
+- 新增挖空泄漏检查：`nested_formula_in_cloze`、`cloze_leak_outside`。
+- 明确 `[F#]` 内不能嵌 `[E##]`；答案内容不能漏在 F# 外；`[`/`]` 与 `% & # _` 必须正确转义。
+- 检查器与测试覆盖 v1.2 残留断点、F# 内公式嵌套和挖空外漏。
+
 ## v1.20.0 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-colors.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
