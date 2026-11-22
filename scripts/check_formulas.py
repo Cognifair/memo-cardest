@@ -16,6 +16,8 @@ from pathlib import Path
 FORMULA = re.compile(r"\[E##(.*?)\]", re.S)
 UNCLOSED = re.compile(r"\[E##[^\]]*$", re.S)
 TRAILING_OPERATOR = re.compile(r"[+\-*/=<>]\s*$")
+TEXTCOLOR = re.compile(r"\\textcolor\{([^}]*)\}")
+HEX6 = re.compile(r"^#[0-9a-fA-F]{6}$")
 SUSPICIOUS = {
     r"\\sqrt\s*\\lbrack": "malformed sqrt delimiter",
     r"\\{f\(y\)\\}": "suspicious f(y) in a discrete-signal formula",
@@ -73,6 +75,11 @@ def inspect_card(card: dict, index: int) -> list[dict]:
             if not brace_balance(raw):
                 issues.append({"key": key, "field": field, "kind": "brace_imbalance",
                                "formula": raw[:180]})
+            for color in TEXTCOLOR.findall(raw):
+                if color.startswith("#") and not HEX6.fullmatch(color):
+                    issues.append({"key": key, "field": field,
+                                   "kind": "invalid_formula_color",
+                                   "formula": raw[:180]})
             for pattern, reason in SUSPICIOUS.items():
                 if re.search(pattern, raw):
                     issues.append({"key": key, "field": field, "kind": "suspicious_formula",

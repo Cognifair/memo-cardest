@@ -42,6 +42,19 @@ class FormulaCheckerTests(unittest.TestCase):
         }])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_formula_color(self):
+        clean = self.run_cards([{
+            "key": "B-1-6",
+            "content": "---\n① [E##\\textcolor{#d16056}{E_k=\\frac{1}{2}mv^2}]\n",
+        }])
+        self.assertEqual(clean.returncode, 0, clean.stdout + clean.stderr)
+        bad = self.run_cards([{
+            "key": "B-1-7",
+            "content": "---\n① [E##\\textcolor{#d1605}{x}]\n",
+        }])
+        self.assertEqual(bad.returncode, 1)
+        self.assertIn("invalid_formula_color", bad.stdout)
+
     def test_nested_cloze_allowbreak_rejected(self):
         result = self.run_cards([{
             "key": "B-1-4",

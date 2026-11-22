@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.20.0 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-colors.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
+
+### 新增
+
+- 公式内部自定义颜色：`\textcolor{#RRGGBB}{...}`，支持六位十六进制和 KaTeX 命名色。
+- 语义色范围与 `memo-designer` 对齐：关键 `#36B59D`、术语/易错 `#D16056`、模糊 `#EB9E27`、警告 `#DC663E`、中性 `#8E8E8E`。
+- 检查器检查 `\textcolor` 的十六进制格式；颜色渲染仍需按 iOS / Android / 网页客户端抽查。
+
 ## v1.19.0 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/wrap_formula_lines.py, scripts/test_wrap_formula_lines.py, scripts/test_check_formulas.py)
