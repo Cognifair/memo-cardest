@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.18.1 — 2026-11-22
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/wrap_formula_lines.py, scripts/test_wrap_formula_lines.py)
+
+### 修复
+
+- 修正整行包裹默认：`--mode formula` 输出 `[E##...]`，可使用 `\allowbreak` 换行。
+- `--mode cloze` 输出 `[E##[F#n#...]]`，不再声明自动换行；嵌套挖空不能依赖 `\allowbreak`。
+- 测试覆盖 formula/cloze 两种模式。
+
 ## v1.18.0 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/wrap_formula_lines.py, scripts/test_wrap_formula_lines.py)
@@ -9,7 +19,7 @@
 ### 新增
 
 - 整行包裹 + 换行生成器：`scripts/wrap_formula_lines.py`。
-- 答案行包成 `[E##[F#n#...]]`；中文按 8 字/标点切块并插入 `\allowbreak`；公式按顶层逗号拆分。
+- 初始版本默认 cloze；v1.18.1 改为默认 formula，cloze 只用于短行。
 - 生成到 `content_wrapped`，不覆盖原正文；图片/选择题/卡片引用标签明确报错，不静默吞掉。
 
 ## v1.17.1 — 2026-11-22

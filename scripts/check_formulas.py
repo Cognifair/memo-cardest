@@ -53,6 +53,11 @@ def inspect_card(card: dict, index: int) -> list[dict]:
         if "$" in text:
             issues.append({"key": key, "field": field, "kind": "dollar_residue",
                            "snippet": text[:180]})
+        for line in text.splitlines():
+            if "[E##[F#" in line and r"\allowbreak" in line:
+                issues.append({"key": key, "field": field,
+                               "kind": "nested_cloze_allowbreak",
+                               "snippet": line[:180]})
         if UNCLOSED.search(text):
             issues.append({"key": key, "field": field, "kind": "unclosed_formula",
                            "snippet": text[:180]})

@@ -10,14 +10,15 @@ SCRIPT = ROOT / "scripts" / "wrap_formula_lines.py"
 
 
 class WrapFormulaLinesTests(unittest.TestCase):
-    def run_wrap(self, cards):
+    def run_wrap(self, cards, extra=None):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp) / "cards.json"
             output = Path(tmp) / "wrapped.json"
             source.write_text(json.dumps(cards, ensure_ascii=False), encoding="utf-8")
-            result = subprocess.run([sys.executable, "-B", str(SCRIPT), str(source),
-                                     "--output", str(output)],
-                                    capture_output=True, text=True)
+            argv = [sys.executable, "-B", str(SCRIPT), str(source), "--output", str(output)]
+            if extra:
+                argv.extend(extra)
+            result = subprocess.run(argv, capture_output=True, text=True)
             content = output.read_text(encoding="utf-8") if output.exists() else None
             return result, content
 
@@ -29,10 +30,10 @@ class WrapFormulaLinesTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         card = json.loads(output)[0]
         wrapped = card["content_wrapped"]
-        self.assertIn("① [E##[F#1#", wrapped)
+        self.assertIn("① [E##", wrapped)
         self.assertIn(r"\text{", wrapped)
         self.assertIn(r"\allowbreak", wrapped)
-        self.assertIn("② [E##[F#2#", wrapped)
+        self.assertIn("② [E##", wrapped)
         self.assertIn("[T#B,!36b59d# 测试 ]", wrapped)
 
     def test_splits_math_at_top_level_comma(self):
@@ -45,6 +46,16 @@ class WrapFormulaLinesTests(unittest.TestCase):
         self.assertIn(r"a=1,", wrapped)
         self.assertIn(r"b=2", wrapped)
         self.assertIn(r"\allowbreak", wrapped)
+
+    def test_cloze_mode_does_not_pretend_to_wrap(self):
+        result, output = self.run_wrap([{
+            "key": "B-1-4",
+            "content": "---\n① [T#B#要点]信号是 [E##f(t)] 的函数\n",
+        }], ["--mode", "cloze"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        wrapped = json.loads(output)[0]["content_wrapped"]
+        self.assertIn("[E##[F#1#", wrapped)
+        self.assertNotIn(r"\allowbreak", wrapped)
 
     def test_rejects_image_tags(self):
         result, _ = self.run_wrap([{

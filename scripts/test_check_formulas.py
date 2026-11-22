@@ -42,6 +42,14 @@ class FormulaCheckerTests(unittest.TestCase):
         }])
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_nested_cloze_allowbreak_rejected(self):
+        result = self.run_cards([{
+            "key": "B-1-4",
+            "content": "---\n① [E##[F#1#\\text{长文本} \\allowbreak \\text{下一段}]]\n",
+        }])
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("nested_cloze_allowbreak", result.stdout)
+
     def test_dollar_and_suspicious(self):
         result = self.run_cards([{
             "key": "B-1-2",

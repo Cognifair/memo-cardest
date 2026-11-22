@@ -154,17 +154,21 @@ def text_latex(text: str, bold: bool, width: int, bold_color: str) -> list[str]:
     return parts
 
 
-def build_latex(line: str, width: int, bold_color: str) -> str:
+def build_latex(line: str, width: int, bold_color: str, allowbreak: bool = True) -> str:
     parts = []
     for kind, value in runs_of(line):
         if kind == "math":
             parts.extend(split_math(value))
         else:
             parts.extend(text_latex(value, kind == "bold", width, bold_color))
-    return r" \allowbreak ".join(part for part in parts if part.strip())
+    separator = r" \allowbreak " if allowbreak else " "
+    return separator.join(part for part in parts if part.strip())
 
 
-def wrap_content(content: str, width: int = 8, bold_color: str = DEFAULT_BOLD_COLOR):
+def wrap_content(content: str, width: int = 8, bold_color: str = DEFAULT_BOLD_COLOR,
+                 mode: str = "formula"):
+    if mode not in {"formula", "cloze"}:
+        raise ValueError("mode must be formula or cloze")
     if content.startswith("---\n"):
         head, separator, body = "", "---\n", content[4:]
     else:
@@ -180,8 +184,13 @@ def wrap_content(content: str, width: int = 8, bold_color: str = DEFAULT_BOLD_CO
             if rest.startswith("[E##[F#"):
                 output.append(line)
                 continue
-            latex = build_latex(rest, width, bold_color)
-            output.append(f"{marker} [E##[F#{groups}#{latex}]]")
+            if mode == "formula":
+                latex = build_latex(rest, width, bold_color, allowbreak=True)
+                output.append(f"{marker} [E##{latex}]")
+            else:
+                # Nested cloze cannot wrap with \allowbreak; keep it short and explicit.
+                latex = build_latex(rest, width, bold_color, allowbreak=False)
+                output.append(f"{marker} [E##[F#{groups}#{latex}]]")
         else:
             output.append(line)
     return head + separator + "\n".join(output), groups
@@ -194,6 +203,8 @@ def main(argv=None) -> int:
     parser.add_argument("--field", default="content")
     parser.add_argument("--output-field", default="content_wrapped")
     parser.add_argument("--width", type=int, default=8)
+    parser.add_argument("--mode", choices=["formula", "cloze"], default="formula",
+                        help="formula: [E##...] supports allowbreak wrapping; cloze: [E##[F#n#...]], cannot wrap")
     parser.add_argument("--bold-color", default=DEFAULT_BOLD_COLOR)
     args = parser.parse_args(argv)
     if not 4 <= args.width <= 40:
@@ -209,7 +220,7 @@ def main(argv=None) -> int:
     for card in cards:
         if not isinstance(card, dict) or not isinstance(card.get(args.field), str):
             continue
-        wrapped, groups = wrap_content(card[args.field], args.width, args.bold_color)
+        wrapped, groups = wrap_content(card[args.field], args.width, args.bold_color, args.mode)
         card[args.output_field] = wrapped
         card["wrap_groups"] = groups
         total += groups
