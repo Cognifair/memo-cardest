@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，并通过 TXT 或官方 API 交付、改卡与操作牌组；也处理批量删除（DELETE 章）、表格/图像重绘审查及 TXT/OCR/卡跳跳/Anki 等制卡支线路由。开工先做启动同步（首次问三档）。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.17.1"
+  version: "1.18.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.17.1
+# 墨卡大师 Memo-Cardest v1.18.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -175,6 +175,7 @@ python -B scripts/check_formulas.py cards.json
 - 修复必须作用于标题、items、要点、易错、答案和备注全部字段；
 - 退出码 1 时先处理可疑项；没有原图证据的公式标“待核对”，不猜补；
 - 脚本通过不等于渲染正确，公式卡仍要在 Markji 客户端抽查分式、上下标、积分和希腊字母。
+- 需要“整行包裹 + 换行”时，用 `scripts/wrap_formula_lines.py` 生成 `content_wrapped`；不要在每张卡里临时拼 `\allowbreak`。
 
 ## G4 验收与交付
 
