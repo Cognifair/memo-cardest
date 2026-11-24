@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.20.1
+# 墨卡大师 Memo-Cardest v1.21.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -6,7 +6,7 @@
 
 **你写一张样卡，它把整份材料按这个口径做完。**
 
-墨墨记忆卡（Markji）的制卡技能：拆知识点、设计题面、写卡片正文、按章节排版，最后走官方 OpenAPI 直接写回，或导出一份 UTF-8 TXT 由客户端导入。扫描件和大 PDF 可以先交给 [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) 识别成 Markdown，再进入制卡流程。
+墨墨记忆卡（Markji）的制卡技能：拆知识点、设计题面、写卡片正文、按章节排版，可走官方 OpenAPI 直接写入或交付 UTF-8 TXT。TXT 如需带图片、音频，可选 Memo-TXT 的官网 APKG 中转，不用 OpenAPI。扫描件和大 PDF 可以先交给 [Memo-MinerUOCR](https://github.com/Cognifair/memo-mineruocr) 识别成 Markdown，再进入制卡流程。
 
 调用名 `$memo-cardest` · [宣传页](https://moka-master.app.workbuddy.host/?sharecode=ZYHGDS4GEB) · [变更记录](CHANGELOG.md)
 
@@ -21,7 +21,7 @@
 | **合并两个牌组** | “把这两个牌组合并到一起” | **`memo-cardest` 的 `merge-decks` 流程；先只读计划，复制阶段后续接入** |
 | 表格 | “这张表做成表格卡” | `memo-canvas` |
 | 图像重绘 | “这张公式图/化学结构/流程图保留或重画” | `memo-canvas` |
-| 生成 TXT 自己导入 | “生成 TXT，不碰 API” | `memo-txt` |
+| TXT 文件或带媒体导入 | “只给我 TXT”“走 TXT，把图片和音频一起导入” | `memo-txt`；媒体走官网 APKG 中转 |
 | 扫描件 / PDF OCR | “先 OCR 再制卡” | `memo-mineruocr` |
 | 卡片互链 / 目录跳转 | “给这两张卡加双向链接” | `memo-cardlink`（卡跳跳） |
 | Anki 图片挖空迁墨 | “把 Anki 卡迁到墨墨” | `memo-ankigo`（迁墨） |
@@ -153,7 +153,7 @@ git clone https://github.com/Cognifair/memo-qahelper.git
 ## 第一次使用会发生什么
 
 1. **问你要不要自动同步。** 三选一：仅这次同步 / 以后自动帮我同步（需要开启完全权限）/ 不需要。选过的选择会被记住，之后不再重复问。
-2. **问两类问题。** 交付路线走官方 API 还是导出 TXT；以及章节怎么切、样式来源：你发一张样卡（推荐）/ 用目标牌组首卡 / 按工具箱默认 / 自己描述。用户没回答不往下推进。
+2. **问两类问题。** 确认交付走官方 API、普通 TXT 文件，还是 TXT 加官网媒体中转；再确认章节和样式来源。用户已确认的项不重复问。
 3. **开工。** 先检查源文件有没有文字层：图片版/扫描件会先问你要不要 OCR，不会自己跑一套 OCR；没有文字层时不会假装已经读懂。遇到真实表格或公式图/化学结构/流程图会强制先调用 `memo-canvas`（墨兰迪）；走 API 路线时，每张卡写完都会回读比对，回读结果和写入状态一起报给你。
 
 最小示例：
@@ -236,7 +236,7 @@ npm 包已发布：`memo-studio-dsh@0.1.9`。可以直接在 DSH 里说「把 me
 | 步骤 | 内容 | 留痕 |
 |---|---|---|
 | **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
-| **G0** | 交付路线与凭证：先用问题框确认 API / TXT；**“用 API 查看/读取”只算只读，不算 API 交付**；TXT 需确认会员以定字数上限，API 不问会员、只处理凭证 | `delivery: txt（用户选择）` 或 `member: pro（本次指定凭证）` |
+| **G0** | 确认 API、TXT 文件或 TXT 加官网媒体中转；**“用 API 查看/读取”只算只读**。TXT 确认会员以定字数上限；官网中转默认只预览最终导入 | `delivery: txt`、`delivery: txt-web-media` 或 API 路线记录 |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
 | **G1.4.1** | 强制视觉内容确认：每次先问有没有表格/统计图/示意图/公式图/化学结构式/反应式；有或不确定交给 `memo-canvas`，与表格同批只调用一次但分开提问、逐项回报 | `figures: found(N) → memo-canvas invoked` |

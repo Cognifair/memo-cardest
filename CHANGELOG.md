@@ -2,6 +2,13 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.21.0 — 2026-11-24
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, agents/openai.yaml, version.json, references/txt-workflow.md, references/capability-map.md, references/tables.md, references/behavioral-evals.md, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
+
+- TXT 路线接入 Memo-TXT 的官网 APKG 中转，可复用图片和音频引用，不用 OpenAPI。仅交付 TXT 仍为离线操作；网页默认只预览最终导入，提交须经用户授权。
+- 一并发布原 v1.20.1 待发修复：检查公式挖空标签嵌套和答案泄漏，并补充语法约束与回归测试。
+
 ## v1.20.1 — 2026-11-22
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)
