@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.22.0 — 2026-11-25
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/media-safety.md, scripts/audit_docx_media.py, scripts/check_media_refs.py, scripts/test_media_safety.py)
+
+### 新增
+
+- DOCX 媒体审计：按 relationship/media part 读文件头，WMF/EMF、类型不一致、外部链接和缺失 part 全部 `needs_review`，不自动生成 `[Pic#]`。
+- 保留原件、段落锚点和 Word 显示尺寸/像素尺寸比例；尺寸异常只作待审信号，不直接拒绝。
+- 逐引用媒体校验：每个 Pic 追溯到 accepted 记录、原件 hash 和转换后 hash；同一图可复用，不靠总数判断。
+- 文档与技能规则明确：标点确认后还原文本，示意图走转换/重绘，未判明且影响题意的卡暂缓。
+
 ## v1.21.0 — 2026-11-24
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, agents/openai.yaml, version.json, references/txt-workflow.md, references/capability-map.md, references/tables.md, references/behavioral-evals.md, references/formula-cards.md, scripts/check_formulas.py, scripts/test_check_formulas.py)

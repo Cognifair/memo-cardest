@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.21.0"
+  version: "1.22.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.21.0
+# 墨卡大师 Memo-Cardest v1.22.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -128,6 +128,20 @@ metadata:
 - 图片版先按 G1.4 OCR，但 OCR 只处理文字；公式/结构/流程图仍要按本步交给 `memo-canvas`。
 
 留痕：`figures: found(N) → memo-canvas invoked` / `figures: none` / `figures: user-skip`；表格和图形同批时记 `visual: tables+figures → single memo-canvas call`。细节见 [references/image-redraw.md](references/image-redraw.md) 与 [references/visual-brief.md](references/visual-brief.md)。
+
+## G1.4.2 DOCX 媒体审计（含图片的 Word 强制）
+
+DOCX 里出现图片、公式对象或符号对象时，先读 [references/media-safety.md](references/media-safety.md)，再运行：
+
+```text
+python -B scripts/audit_docx_media.py source.docx --out media_audit.json --assets-dir media_assets
+```
+
+- 判断格式必须看实际 media part 的文件头，不能靠 `w:drawing` / `w:pict`；
+- `wmf` / `emf`、声明类型不一致、外部链接、找不到 media part → `needs_review`，不自动生成 `[Pic#]`；
+- 待审媒体保留原件和段落锚点：确认是标点就还原文本，确认是示意图再转换/重绘；未判明且影响题意的卡暂缓；
+- 不因“图大/空白多/单字符”直接删除或放行，只作为复核信号；
+- 入卡前逐引用跑 `scripts/check_media_refs.py`，要求每个 Pic 能追溯到已接受媒体、原件 hash 和转换后 hash；同一张图可复用，不校验总数相等。
 
 ## G1.5 开局表格审查（强制，早于 G2）
 
