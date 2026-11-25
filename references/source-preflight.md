@@ -15,7 +15,7 @@
 
 ## 检查
 
-本地文件先运行：
+先完成 [G1.3 页序检查](folio-order.md)。多页 PDF 使用核准的实际输入并附 `--folio-receipt "<receipt.json>"`。其他本地文件运行：
 
 ```text
 python -B scripts/inspect_source.py "<文件路径>"
@@ -37,7 +37,7 @@ python -B scripts/inspect_source.py "<文件路径>"
 | `unknown` 且有图片/扫描特征 | 不要假设；看图或问用户 |
 | 纯图片 | 停下来问 OCR 路线 |
 
-PDF 需要 `pypdf`；没有时脚本返回 `unknown`，按“未知”处理，不假装已检查。
+PDF 用 pypdf 或 PyMuPDF 确认页数；页数未知、页序凭据缺失或不匹配时返回 blocked，不产生正文样本。
 
 ## 必须问的问题
 
@@ -49,7 +49,7 @@ PDF 需要 `pypdf`；没有时脚本返回 `unknown`，按“未知”处理，�
 ```
 
 - 用当前 Agent 的问题框；
-- 不要自己跑 Windows OCR 后再补问；
+- 正文 OCR 不能先跑后问；G1.3 的局部页码识别不属于正文 OCR；
 - 不要说“没 Token”之前不检查：先运行
   `python -B <memo-mineruocr>/scripts/secret_resolver.py MINERU_TOKEN`；
 - 用户已明确要求 OCR 时，也必须走 `memo-mineruocr`，不要在 cardest 里临时实现 OCR。

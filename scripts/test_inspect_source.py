@@ -23,14 +23,14 @@ def make_docx(path, text, images=0):
 
 
 class InspectSourceTests(unittest.TestCase):
-    def test_docx_with_images_and_no_text_is_ocr(self):
+    def test_image_heavy_docx_requires_paginated_input_before_ocr(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "image-only.docx"
             make_docx(path, "标题", images=3)
             result = MODULE.inspect(path, 8)
-        self.assertEqual(result["text_layer"], "absent")
+        self.assertEqual(result["status"], "blocked")
         self.assertEqual(result["image_count"], 3)
-        self.assertEqual(result["recommendation"], "ask_user_ocr_route")
+        self.assertEqual(result["recommendation"], "render_fixed_layout_pdf_then_check")
 
     def test_docx_with_text_is_present(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -43,7 +43,8 @@ class InspectSourceTests(unittest.TestCase):
     def test_image_is_ocr(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "page.png"
-            path.write_bytes(b"not-a-real-png")
+            from PIL import Image
+            Image.new("RGB", (12, 8), "white").save(path)
             self.assertEqual(MODULE.inspect(path, 8)["text_layer"], "absent")
 
     def test_text_file_is_present(self):

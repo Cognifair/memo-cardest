@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v1.22.2
+# 墨卡大师 Memo-Cardest v1.23.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
@@ -238,6 +238,7 @@ npm 包已发布：`memo-studio-dsh@0.1.9`。可以直接在 DSH 里说「把 me
 | **S0** | 首次开头选择同步偏好；`auto` 时只读检查主链与支链，后台任务负责更新；`once` 手动同步一次 | `sync: auto · host up_to_date · 3 checked · no updates` |
 | **G0** | 确认 API、TXT 文件或 TXT 加官网媒体中转；**“用 API 查看/读取”只算只读**。TXT 确认会员以定字数上限；官网中转默认只预览最终导入 | `delivery: txt`、`delivery: txt-web-media` 或 API 路线记录 |
 | **G1** | 目标与范围：用问题框确认「是否仿首卡样式」与「章节怎么切」 | — |
+| **G1.3** | 多页材料先逐页核对印刷页序；文字层优先，缺失时优先模型视觉、否则本地 OCR；发现错序生成已复核副本 | 原扫描页、印刷页、最终位置及核序凭据 |
 | **G1.4** | 强制源文件预检：检查文字层/图片版；无文字层先问 OCR，不在主技能里临时跑 OCR | `source: text` 或 `source: image → asked OCR route` |
 | **G1.4.1** | 强制视觉内容确认：每次先问有没有表格/统计图/示意图/公式图/化学结构式/反应式；有或不确定交给 `memo-canvas`，与表格同批只调用一次但分开提问、逐项回报 | `figures: found(N) → memo-canvas invoked` |
 | **G1.5** | 强制表格审查：有真实表格就调用 `memo-canvas`，没有就记录 `tables: none` 继续 | `tables: found(N) → memo-canvas invoked` |

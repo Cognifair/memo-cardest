@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.22.2"
+  version: "1.23.0"
 ---
 
-# 墨卡大师 Memo-Cardest v1.22.2
+# 墨卡大师 Memo-Cardest v1.23.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -97,14 +97,20 @@ metadata:
 
 两个问题按 S0 的提问约束执行；用户没回答就不生成卡片、不推进后续步骤。
 
+## G1.3 材料页序检查（强制，在 G1.4 之前）
+
+多页 PDF 无论有无文字层均须全量核对；属于同一份材料的成组扫描图或多帧扫描件先按输入顺序合成工作 PDF，不逐张当单页绕过。固定版式的其他材料先导成保留版面的 PDF；单页或本身不分页的文本不适用。每份独立材料分别核序。
+
+按 [页序检查与交接](references/folio-order.md) 执行：逐页读印刷页码，文字层取不到时，有视觉能力就看带原扫描序号的页边图，无视觉就用本地页码 OCR。明确错序必须重排副本并复核；漏读、跳号、封面或重启编号不按数字猜排。未解决时停在本关；页码识别只在本地取证，不代表授权识别或上传正文。
+
 ## G1.4 源文件预检 / OCR 路线（强制，早于 G1.5）
 
-在表格审查前，先确认材料能不能读。本地文件运行 `python -B scripts/inspect_source.py "<文件>"`；PDF 没有 `pypdf` 时返回 `unknown`，按未知处理。
+在表格审查前先确认材料能不能读：运行 `python -B scripts/inspect_source.py "<实际输入文件>"`，多页 PDF 必须附 `--folio-receipt "<G1.3 的 receipt.json>"`。退出码非零时不读取正文、不切题、不送 OCR。通过后用 [受检材料入口](references/folio-order.md) 提取正文或交给 MinerU，不另开原件。
 
 - `text_layer=present` → 留痕 `source: text`，继续。
 - `absent` / `sparse`，或纯图片/扫描件 → **停下来问用户**：
   「这份材料没有文字层/是图片版（N 张图）。要 OCR 吗？① 本地 OCR（不上传、不需要 Token） ② MinerU 云端（识别更好，需上传并消耗额度；Token 已配置/未配置） ③ 先不 OCR（换文件或只做文字部分）」
-- 用户没选就不推进；不要自己跑 Windows OCR 后再补问。
+- 用户没选就不推进；不要先跑正文 OCR 后再补问。
 - 选 OCR 必须调用 `memo-mineruocr`，不在 cardest 里临时实现。说“Token 未配置”前，先运行 `python -B <memo-mineruocr>\scripts\secret_resolver.py MINERU_TOKEN` 核实。
 - OCR 完成后回到 G1.5 检查表格；OCR 成功不等于知识拆解或语法验收。
 - 用户已明确要求 OCR 时仍走 `memo-mineruocr`；留痕 `source: text | image → asked OCR route | local OCR | MinerU`。
