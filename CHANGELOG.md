@@ -2,6 +2,12 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.22.2 — 2026-11-25
+
+影响面：制卡交付前的语法检查。
+
+- 补充方括号转义、挖空分隔符、挖空嵌套和选择题换行四组正反例。
+
 ## v1.22.1 — 2026-11-25
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml)
