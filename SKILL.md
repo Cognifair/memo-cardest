@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "1.22.0"
+  version: "1.22.1"
 ---
 
-# 墨卡大师 Memo-Cardest v1.22.0
+# 墨卡大师 Memo-Cardest v1.22.1
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -129,7 +129,9 @@ metadata:
 
 留痕：`figures: found(N) → memo-canvas invoked` / `figures: none` / `figures: user-skip`；表格和图形同批时记 `visual: tables+figures → single memo-canvas call`。细节见 [references/image-redraw.md](references/image-redraw.md) 与 [references/visual-brief.md](references/visual-brief.md)。
 
-## G1.4.2 DOCX 媒体审计（含图片的 Word 强制）
+## G1.4.2 DOCX 媒体审计（仅 .docx 且含媒体引用时强制）
+
+**触发条件：输入/待改正文的来源是 `.docx`，且含图片、公式对象或符号对象。TXT、Markdown、PDF、网页、API 卡片不执行本步，直接进入后续流程。**
 
 DOCX 里出现图片、公式对象或符号对象时，先读 [references/media-safety.md](references/media-safety.md)，再运行：
 

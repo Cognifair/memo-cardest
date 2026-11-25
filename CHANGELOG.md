@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v1.22.1 — 2026-11-25
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml)
+
+### 修复
+
+- G1.4.2 明确触发条件：仅 `.docx` 且含媒体引用时执行；TXT、Markdown、PDF、网页、API 卡片直接跳过。
+
 ## v1.22.0 — 2026-11-25
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/media-safety.md, scripts/audit_docx_media.py, scripts/check_media_refs.py, scripts/test_media_safety.py)
