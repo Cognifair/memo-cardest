@@ -2,6 +2,18 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.1.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/chapter-confirmation.md, references/behavioral-evals.md, scripts/check_chapter_plan.py, scripts/test_chapter_plan.py)
+
+### 新增
+
+- 章节切分硬门禁：只有明确切法才算已回答；`按章节/按教材/分一下` 仍必须提问。
+- 新任务换材料、牌组或切分粒度时必须重新确认；上次答案不能复用。
+- 生成/写入前保存 `chapter_plan.json` 并运行 `check_chapter_plan.py`；未通过不生成、不写入、不批量上传。
+- `ask_user_question` 不可用时用编号问题文字停止；goal/自动续跑不得绕过。
+- 新增 AA 行为评测场景。
+
 ## v2.0.0 — 2026-11-26
 
 影响面：Word 来源卡片的图片核对、写入计划和回读核验。
