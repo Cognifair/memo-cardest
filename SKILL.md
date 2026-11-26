@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "2.1.0"
+  version: "2.2.0"
 ---
 
-# 墨卡大师 Memo-Cardest v2.1.0
+# 墨卡大师 Memo-Cardest v2.2.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -157,6 +157,13 @@ python -B scripts/audit_docx_media.py source.docx --out media_audit.json --asset
 - 待审媒体保留原件和段落锚点：确认是标点就还原文本，确认是示意图再转换/重绘；未判明且影响题意的卡暂缓；
 - 不因“图大/空白多/单字符”直接删除或放行，只作为复核信号；
 - 入卡前逐引用跑 `scripts/check_media_refs.py`，要求每个 Pic 能追溯到已接受媒体、原件 hash 和转换后 hash；同一张图可复用，不校验总数相等。
+
+## G1.4.3 微信公众号文章（仅用户提供 URL / 保存的 HTML 时）
+
+- 来源是 `mp.weixin.qq.com` 文章或用户保存的 article.html 时，先读 [references/wechat-source.md](references/wechat-source.md)，运行 `python -B scripts/fetch_wechat_article.py --url … --out … --download-images`；抓取失败就让用户保存 HTML，不伪造正文。
+- 正文取 `#js_content`，图片优先 `data-src`，按 URL/hash 去重；图片默认 `needs_review`，不自动生成 `[Pic#]`。
+- 索引文章先列 `sub_links` 数量和标题，确认抓取范围后再逐篇抓；不默认全抓，不绕过登录/付费墙/验证码。
+- 抓取后仍按 G1 章节确认、G1.5 表格审查、图片待审和写入授权执行；公众号来源不跳过这些门禁。
 
 ## G1.5 开局表格审查（强制，早于 G2）
 

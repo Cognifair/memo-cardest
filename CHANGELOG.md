@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.2.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/wechat-source.md, scripts/fetch_wechat_article.py, scripts/test_wechat_article.py)
+
+### 新增
+
+- 微信公众号文章材料入口：支持文章 URL 或保存的 HTML，提取 `#js_content` 正文、`data-src` 图片、子文章链接。
+- 图片按 URL/hash 去重，默认 `needs_review`，不自动生成 `[Pic#]`；索引文章先确认抓取范围，不默认全抓。
+- 抓取失败要求用户保存 HTML，不伪造正文；保留来源 URL、标题、公众号和抓取时间。
+- 公众号来源仍经过 G1 章节确认、表格/图片审查和写入授权。
+
 ## v2.1.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/chapter-confirmation.md, references/behavioral-evals.md, scripts/check_chapter_plan.py, scripts/test_chapter_plan.py)

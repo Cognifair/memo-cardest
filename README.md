@@ -1,4 +1,4 @@
-# 墨卡大师 Memo-Cardest v2.1.0
+# 墨卡大师 Memo-Cardest v2.2.0
 
 [![License: MIT](https://img.shields.io/github/license/Cognifair/memo-cardest?color=2f6f4f&label=license)](LICENSE)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-4b5563)
