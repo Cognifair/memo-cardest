@@ -106,3 +106,11 @@ python -B scripts/check_media_refs.py cards.json \
 ```
 
 只有对照原始 DOCX、转换记录和卡面内容后，才能把“Word 存成 WMF + 转换放大”写成已确认根因。
+## 6. 原题到成卡的反向对账（写入前）
+
+创建卡片／改正文必须在计划每个 item 明确 source_material。非 Word 原始材料写 "non_docx"。原始来源是 Word 的，即使中间转过 PDF/Markdown，也填 {"docx_manifest":"完整绝对路径"}；不得把 OCR、模型改写或解包后的文件当成新来源。纯移动不改变正文，免此项。没有来源声明的旧写卡脚本会停在发送前；要补建计划，不直接编辑已写日志。历史 verified 仅是回读证据，不能追认为已做本检查。
+
+1. 先用前述完整媒体审计核实 Word 原题段落范围，在表格内的段落也算。执行 python scripts/docx_coverage.py 原卷.docx 卡片key 开始段号 结束段号 新清单.json，生成每处实际引用的核对模板。题号、题干、题图、选项、答案和解析使用原题范围；分卡时明确人工核对本卡范围，不为过检查缩短题区。无法可靠定位就暂停。
+2. 每个引用在原位置决定去向：picture 填 media_id，需复核的格式另填 reviewed:true；text 填按原图核实的 replacement；decorative 仅限目读确认的装饰对象，填 reviewed:true 和具体 reason；alternate 仅限同段相同内容的图片备用表示。每项均须写 reason。不按扩展名或字节数一刀切。清单顶层 files 是上传接受清单（以实际 media ID 为键，含 decision:accepted、原图 source_sha256 和上传文件 converted_sha256），复用真实上传记录，不编造 ID。
+3. 对选项图填 option（A=1、B=2，以此类推）。常见“上排装置、下排 A/B 说明”的 Word 表格按原列自动确定选项；图要对应固定顺序的选项，原选项说明与其中的公式要保留在对应选项，或在题面明确标 A/B/C/D 的各行说明。不能只写“第一张图”等丢掉每项的实验目的。无法确定图文归属先人工核对版面。
+4. API 写入登记和回读核验使用同一清单；执行时重新读取原始 DOCX，不能以旧审计 JSON 或图片总数代替。TXT 路线在封装前逐卡执行 python scripts/docx_coverage.py check 清单.json 卡片key 最终单卡正文.txt，退出码非零不交付。检查依赖源文件与清单；语义、公式转写、客户端布局仍须按原图抽查。

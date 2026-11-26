@@ -18,7 +18,7 @@ def snap(**changes):
 
 def plan(operation="update"):
     return {"task_id": "offline-test", "account_alias": "mock-account",
-            "items": [{"key": "source/ch1/q1", "operation": operation,
+            "items": [{"key": "source/ch1/q1", "operation": operation, "source_material": "non_docx",
                        "baseline": None if operation == "create" else snap(content="旧正文"),
                        "expected": snap(card_id=None) if operation == "create" else snap()}]}
 

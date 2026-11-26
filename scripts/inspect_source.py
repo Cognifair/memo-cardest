@@ -101,9 +101,12 @@ def inspect(path, max_pages, receipt=None):
     suffix = path.suffix.lower()
     if suffix == ".docx":
         result = inspect_docx(path)
+        origin = {"kind": "docx", "original_docx": str(path.resolve()),
+                  "card_write_requires": "docx_manifest"}
+        result["material_origin"] = origin
         if result.get("image_count", 0) > 1 and result.get("text_layer") in ("absent", "sparse"):
             return blocked("docx", "possible_scan_sequence", "render_fixed_layout_pdf_then_check",
-                           image_count=result["image_count"])
+                           image_count=result["image_count"], material_origin=origin)
         return result
     if suffix == ".pdf":
         return inspect_pdf(path, max_pages, receipt)

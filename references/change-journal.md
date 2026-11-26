@@ -91,3 +91,4 @@ python -B scripts/change_journal.py report --journal <任务目录>/journal.json
 ## 固定上传模块与显式重试
 
 临时 API 脚本必须通过 [upload-progress.md](upload-progress.md) 的 `UploadTask` 接入；清单仍是逐卡状态唯一事实来源。`change_journal.mutate()` 为 CLI 和模块提供统一锁、校验、原子写入。新增显式 `retry-rejected --authorize-retry` 仅允许 failed→planned 并保留历史；这不是自动续跑，也不允许重置 uncertain、written 或 mismatch。旧版本“不提供重置”限制对未知结果继续成立；明确拒绝后的获准重试走此专用入口。
+创建和更新正文的 plan.items[] 必须声明 source_material：非 Word 填 "non_docx"，Word 填 {"docx_manifest":"绝对路径"}，见 media-safety.md 第 6 节。缺失时 begin / verify 拒绝；纯 move 不受影响。

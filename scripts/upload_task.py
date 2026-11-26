@@ -85,7 +85,8 @@ def canonical(value):
 
 
 def item_identity(item):
-    return canonical({"key": item["key"], "operation": item["operation"], "expected": item["expected"]})
+    return canonical({"key": item["key"], "operation": item["operation"], "expected": item["expected"],
+                      **({"source_material": item["source_material"]} if "source_material" in item else {})})
 
 
 def identity_digest(journal):

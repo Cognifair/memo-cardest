@@ -162,14 +162,16 @@ def audit(docx_path: Path, assets_dir: Path | None = None) -> dict:
                 display_w, display_h = vml_size(paragraph)
 
             entries = []
-            for blip in blips:
-                rid = blip.get(R_EMBED) or blip.get(R_LINK)
-                if rid:
-                    entries.append((rid, "drawing"))
-            for image in vml_images:
-                rid = image.get(R_ID)
-                if rid:
-                    entries.append((rid, "vml"))
+            # Keep source order even when modern and legacy objects share a paragraph.
+            for node in paragraph.iter():
+                if node.tag == f"{{{A_NS}}}blip":
+                    rid = node.get(R_EMBED) or node.get(R_LINK)
+                    if rid:
+                        entries.append((rid, "drawing"))
+                elif node.tag == f"{{{V_NS}}}imagedata":
+                    rid = node.get(R_ID)
+                    if rid:
+                        entries.append((rid, "vml"))
 
             for rid, embedding in entries:
                 rel = rels.get(rid, {})

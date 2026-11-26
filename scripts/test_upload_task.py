@@ -12,7 +12,7 @@ from upload_task import UploadTask, WriteResult, combine, identity_digest
 
 def plan(n=1):
     return {"task_id": "fixture", "account_alias": "mock", "items": [
-        {"key": str(k), "operation": "create", "baseline": None,
+        {"key": str(k), "operation": "create", "source_material": "non_docx", "baseline": None,
          "expected": {"deck_id": "d", "chapter_id": "c", "card_id": None,
                       "content": "mock", "grammar_version": 3}} for k in range(n)]}
 

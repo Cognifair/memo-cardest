@@ -65,7 +65,7 @@ def make_journal(plan):
     require(isinstance(plan["items"], list) and bool(plan["items"]), "items_required")
     items, seen, targets = [], set(), set()
     for entry in plan["items"]:
-        keys(entry, ("key", "operation", "baseline", "expected"))
+        keys(entry, ("key", "operation", "baseline", "expected"), ("source_material",))
         key = identifier(entry["key"])
         require(key not in seen, "duplicate_source_key")
         seen.add(key)
@@ -103,7 +103,7 @@ def validate_journal(journal):
             "items": []}
     for item in journal["items"]:
         keys(item, ("key", "operation", "baseline", "expected", "bound_card_id",
-                    "status", "verification", "history"))
+                    "status", "verification", "history"), ("source_material",))
         require(item["status"] in STATES, "invalid_state")
         require(isinstance(item["history"], list) and bool(item["history"]), "invalid_history")
         for event in item["history"]:
@@ -137,6 +137,8 @@ def validate_journal(journal):
                     or (item["status"] == "mismatch" and bool(verification["differences"])),
                     "invalid_verification")
         plan["items"].append({f: item[f] for f in ("key", "operation", "baseline", "expected")})
+        if "source_material" in item:
+            plan["items"][-1]["source_material"] = item["source_material"]
     make_journal(plan)
     return journal
 
@@ -211,6 +213,25 @@ def apply(journal, action, key, card_id=None, actual=None):
     item = next((i for i in journal["items"] if i["key"] == key), None)
     require(item is not None, "unknown_item")
     state = item["status"]
+    if action in ("begin", "verify") and item["operation"] != "move":
+        source = item.get("source_material")
+        require(source is not None, "source_material_required: declare non_docx or supply DOCX coverage manifest")
+        body = item["expected"]["content"]
+        front = body.partition("\n---")[0]
+        if "[Choice#" in front and any(cue in front for cue in ("下列装置", "如图所示", "哪张图", "第几张图")):
+            import re
+            options = re.findall(r"(?m)^[-*]\s*([^\n]+)", front)
+            if options and all(re.fullmatch(r"[A-H]|第[一二三四五六七八九十0-9]+张图",opt.strip()) for opt in options):
+                require("[Pic#ID/" in front, "visual_choices_have_no_pictures")
+        if source != "non_docx":
+            require(isinstance(source, dict) and set(source) == {"docx_manifest"} and
+                    isinstance(source["docx_manifest"], str) and Path(source["docx_manifest"]).is_absolute(),
+                    "invalid_docx_manifest_path")
+            from docx_coverage import check
+            try:
+                check(source["docx_manifest"], key, item["expected"]["content"])
+            except (ValueError, KeyError, OSError, IndexError, TypeError) as exc:
+                raise JournalError("docx_media_blocked: " + str(exc)) from exc
     if action == "begin":
         require(state == "planned", "cannot_resend")
         # Persist BEFORE the caller sends HTTP. A crash is then conservatively uncertain.
