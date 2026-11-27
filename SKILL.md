@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "2.3.0"
+  version: "2.4.0"
 ---
 
-# 墨卡大师 Memo-Cardest v2.3.0
+# 墨卡大师 Memo-Cardest v2.4.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -215,6 +215,8 @@ python -B scripts/check_formulas.py cards.json
 - **纯公式行整行只放一个 `[E##...]`**，不要拆成多个片段；行内公式保留在句子中，不能把整句中文包进公式；公式+中文说明时，中文放公式外；
 - `$...$`、`\(...\)`、`\[...\]` 统一转成 `[E##...]`，不要在公式内外混用；
 - 修复必须作用于标题、items、要点、易错、答案和备注全部字段；
+- 检查最终要提交的正文：默认排版产物取 `content_wrapped`；自定义字段先映射为 `content`。同一份正文用于 API 写入或 TXT 导出。含挖空的公式条件中，若数学部分用半角左括号、文字部分用全角右括号，改为成对的半角或全角括号；同组跨片段本身不判错，不全局替换中文标点；按完整条件或推导步骤分行。长式接在文字后面时标记窄屏预览，不按源码长度判错。
+- 有公式嵌套、命令或显示投诉时，再运行 `python -B scripts/check_render.py cards.json --katex <已有 node_modules/katex 的父目录>`。静态错误先处理；KaTeX 失败定位到卡和块；运行环境不可用记未测。回读、KaTeX、网页及手机预览分别记录。
 - 退出码 1 时先处理可疑项；没有原图证据的公式标“待核对”，不猜补；
 - 含挖空时重点检查 `nested_formula_in_cloze`、`cloze_leak_outside`、`nested_cloze_allowbreak`：F# 内不能嵌 E##，答案内容不能漏在 F# 外；
 - 脚本通过不等于渲染正确，公式卡仍要在 Markji 客户端抽查分式、上下标、积分和希腊字母。
@@ -224,6 +226,14 @@ python -B scripts/check_formulas.py cards.json
 ## G4 验收与交付
 
 API 上传脚本必须读取 [references/upload-progress.md](references/upload-progress.md)，导入固定模块 `scripts/upload_task.py`。用 `UploadTask` 自动登记任务、绑定会话并记录写请求/回读/重试/结束；优先复用原清单。不另生成通知脚本，不依靠口头报告或自行累计成功数。未知结果保持 uncertain；未接入的旧脚本只能标注兼容检测或进度不可用。**没有接入 `UploadTask` 的 API 写操作，不得声称 Memo Studio 会显示进度；能先接就接，接不上就停下说明“本次卡片操作不会出现在 Studio”，不要把“插件不显示”当成插件故障。**
+
+运行任何自定义 API 写脚本前先检查：
+
+```text
+python -B scripts/check_api_write_script.py <script.py>
+```
+
+退出码 1（裸 `urllib`/`requests` 写请求、没有 `UploadTask`/`begin`）就停下重写，不得先跑再说。
 
 交付前读取 [references/quality-and-troubleshooting.md](references/quality-and-troubleshooting.md) 的「发布前检查」并逐条核对；遇到语法或渲染异常时，再读取「根据症状排障」。回复里带勾选结果；未过项标「待验证」，不得写成已完成。
 - API 卡片创建/修改/移动：执行前读取 [references/change-journal.md](references/change-journal.md)，用本地脚本统一记录变更清单与逐项状态；每次写入后独立 GET，归一化字段后运行比对。其余 API 操作沿用原验收；数量、顺序与客户端预览仍需单独核对。写响应不确定先只读核查，禁止盲目重发；脚本不发请求、不自动续跑。

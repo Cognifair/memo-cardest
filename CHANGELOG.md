@@ -2,6 +2,16 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.4.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, references/behavioral-evals.md, scripts/check_api_write_script.py, scripts/test_api_write_script.py)
+
+### 新增
+
+- API 写脚本前置检查：裸 `urllib`/`requests` 写请求、或 `UploadTask` 未接入 `begin/open` 时退出码 1，必须先重写再运行。
+- 只读 GET 脚本不误报；已接入 `UploadTask` 的脚本通过。
+- `upload-progress.md` 与 G4 增加硬门禁；新增 AC 行为评测场景。
+
 ## v2.3.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/designer-style.md, references/design-toolbox.md, references/behavioral-evals.md)

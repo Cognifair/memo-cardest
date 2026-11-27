@@ -68,6 +68,16 @@ execution 仅接受数值字段 `request_interval_ms`、`concurrency`、`write_r
 - 初始完整请求计划可显示配置估算；只有间隔最多给理论下限。实际 ETA 用近期唯一卡片吞吐率，包含网络与限流耗时；暂停、断连、心跳陈旧和样本不足时隐藏。
 - 未接入模块的旧脚本只能显示标注的兼容清单或历史报告快照；没有可靠来源就显示进度不可用。**API 写操作（创建/修改/移动卡片）如果绕过 `UploadTask`，Memo Studio 不会出现该任务；这不是插件漏读。此时必须停下说明，或先接上 `UploadTask` 再写，不能事后把“没显示”解释成 Studio 故障。**
 
+## 写脚本前置检查
+
+运行任何自定义 API 写脚本前：
+
+```text
+python -B scripts/check_api_write_script.py <script.py>
+```
+
+退出码 1 表示发现裸 `urllib`/`requests` 写请求，或导入了 `UploadTask` 但没有 `begin/open`。此时停止，改写脚本；不要先写入再解释“Studio 没显示”。
+
 ## 离线检查
 
 运行 `python -B -m unittest test_change_journal test_upload_task`（scripts 目录）。使用模拟适配器和临时目录，不提供真实 key。插件 tests 使用同一份脱敏协议夹具回放 96 张及 200 张续传样本。离线通过不代表真实 DSH 或 Markji 客户端通过；真实写卡另需明确授权。
