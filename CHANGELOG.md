@@ -2,6 +2,17 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.3.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/designer-style.md, references/design-toolbox.md, references/behavioral-evals.md)
+
+### 变更
+
+- 默认卡片样式来源改为 `memo-designer`；已支持的 word / choice / term 按对应 `card/*.md` 和冻结模板执行。
+- `style` 留痕改为 `sample | deck-first | designer | custom`；旧 `toolbox` 仅兼容，不再作为默认。
+- `design-toolbox.md` 降级为历史参考；没有对应题型模板时先要样卡，不凭空造版式。
+- 新增 AB 行为评测场景。
+
 ## v2.2.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/wechat-source.md, scripts/fetch_wechat_article.py, scripts/test_wechat_article.py)

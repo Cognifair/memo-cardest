@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "2.2.0"
+  version: "2.3.0"
 ---
 
-# 墨卡大师 Memo-Cardest v2.2.0
+# 墨卡大师 Memo-Cardest v2.3.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 
@@ -82,13 +82,13 @@ metadata:
 1. **样式来源**：「这次卡片样式怎么定？
    ① 我发你一张样卡（推荐）：读取这张卡的真实源码，复制到其余卡
    ② 用目标牌组现有的第一张卡：读取首卡真实源码
-   ③ 不提供样卡：你按工具箱默认（克制绿色）发挥
+   ③ 不提供样卡：按 `memo-designer` 对应题型模板（word / choice / term）发挥
    ④ 不同（自己填写：希望怎么改，例如标题层级、颜色、答案线、题量或解释方式）」
    - 用户已在消息里给样卡/指定卡 → 按①读取，不再问；
    - ①/②读不到真实源码（目标牌组没有首卡、卡读不到）→ 停下说明并请用户补样卡，不静默 fallback；
-   - ③或用户明确说“随你/默认” → 才用工具箱；不要没问就默认；
+   - ③或用户明确说“随你/默认” → 调 `memo-designer`，按对应题型模板；没有对应题型模板时先要样卡，不凭空造；
    - ④按用户填写执行；
-   - 只做单张卡时跳过样式提问；留痕 `style: sample | deck-first | toolbox | custom`。
+   - 只做单张卡时跳过样式提问；留痕 `style: sample | deck-first | designer | custom`；旧记录 `toolbox` 按 `designer` 兼容，不再使用工具箱作为主参考。
 2. **章节切分（硬门禁）**：先读材料，猜测可能的切分方式（如按一级标题、课时/模块、页码区间、题型分组），给出 2–4 个**基于材料实际结构**的选项，并留一个自由填写项：
    - ① 按 <猜测 A> 切分
    - ② 按 <猜测 B> 切分
@@ -189,12 +189,18 @@ python -B scripts/audit_docx_media.py source.docx --out media_audit.json --asset
 
 ## G3 制卡设计
 
-制作前读 [references/design-toolbox.md](references/design-toolbox.md)。
+制作前按题型读 `memo-designer` 的对应卡片规范：
+- 单词卡 → `memo-designer/card/word.md` + `templates/word.txt`
+- 选择题 → `memo-designer/card/choice.md` + `templates/choice.txt`
+- 名词解释 → `memo-designer/card/term.md` + `templates/term.txt`
+- 其他题型 → 先要真实样卡；没有样卡时不用工具箱臆造，按已确认的共有语法最小实现。
+
+[references/designer-style.md](references/designer-style.md) 是桥接说明；`design-toolbox.md` 已降级为历史参考，不再作为默认设计依据。
 - 每张卡有能判分的提取目标；长枚举拆总览 + 分项；用户要求完整背诵时保留完整覆盖。
 - **单卡字数**按 `char_limit` 控制：专业版硬上限 4500、软提醒 4000；非专业版硬上限 1800、软提醒 1600。计数按最终写入的原始 content、UTF-16 单元（中文 1、emoji 通常 2，和前端 length 对齐）；超过硬上限必须拆卡，不静默截断。
 - 题面不给答案线索；解释、助记、相关知识放答案面。
 - 避免全篇粗体、彩虹配色、长空格拉线；保证手机宽度与亮暗模式可读。
-- 图片、音频、遮罩、卡片引用只用真实且获授权的对象；不把本地路径、文件名、URL 伪装成 ID，不复用工具箱固定 ID。
+- 图片、音频、遮罩、卡片引用只用真实且获授权的对象；不把本地路径、文件名、URL 伪装成 ID，不复用模板固定 ID。
 - 表格已在 G1.5 触发 `memo-canvas`：按它的样式/输出生成透明 PNG，或按最新指南采用经验证的简短公式表格；HTML 只作本地编辑源，不写进正文。
 
 ## G3.5 公式卡检查（强制）
