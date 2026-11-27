@@ -68,6 +68,42 @@ execution 仅接受数值字段 `request_interval_ms`、`concurrency`、`write_r
 - 初始完整请求计划可显示配置估算；只有间隔最多给理论下限。实际 ETA 用近期唯一卡片吞吐率，包含网络与限流耗时；暂停、断连、心跳陈旧和样本不足时隐藏。
 - 未接入模块的旧脚本只能显示标注的兼容清单或历史报告快照；没有可靠来源就显示进度不可用。**API 写操作（创建/修改/移动卡片）如果绕过 `UploadTask`，Memo Studio 不会出现该任务；这不是插件漏读。此时必须停下说明，或先接上 `UploadTask` 再写，不能事后把“没显示”解释成 Studio 故障。**
 
+## 媒体阶段进度
+
+图片/音频上传不属于卡片 journal，不能塞进 `UploadTask` 的 verify 计数。需要显示媒体阶段时，使用：
+
+```python
+from media_progress import MediaProgress
+
+with MediaProgress("media-2021-2025", total=603, current="开始") as progress:
+    for i, item in enumerate(items, 1):
+        upload(item)
+        progress.update(i, item.name)
+```
+
+写入：
+
+```text
+~/.memo-cardest/progress/v1/media/<hash>.json
+或 <workspace>/.memo-cardest/progress/v1/media/<hash>.json
+```
+
+字段：
+
+```text
+kind=media / phase=media
+session_id / task_id / total / done / current
+updated_at / pid
+```
+
+规则：
+
+- 只统计文件上传，不统计卡片 verified；
+- 每张或每 5 秒更新一次；
+- 全部完成或切入卡片 journal 时 `close()`；
+- 30 秒无更新视为过期，插件不再显示；
+- 不得用媒体进度冒充卡片完成数。
+
 ## 写脚本前置检查
 
 运行任何自定义 API 写脚本前：

@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.5.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, scripts/media_progress.py, scripts/test_media_progress.py)
+
+### 新增
+
+- 媒体阶段独立进度：media_progress.py 写入 v1/media，不混入卡片 verified 计数。
+- 每张/每 5 秒更新；30 秒无心跳过期；完成或进入卡片 journal 时关闭。
+
 ## v2.4.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, references/behavioral-evals.md, scripts/check_api_write_script.py, scripts/test_api_write_script.py)
