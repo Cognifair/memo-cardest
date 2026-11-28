@@ -68,6 +68,49 @@ execution 仅接受数值字段 `request_interval_ms`、`concurrency`、`write_r
 - 初始完整请求计划可显示配置估算；只有间隔最多给理论下限。实际 ETA 用近期唯一卡片吞吐率，包含网络与限流耗时；暂停、断连、心跳陈旧和样本不足时隐藏。
 - 未接入模块的旧脚本只能显示标注的兼容清单或历史报告快照；没有可靠来源就显示进度不可用。**API 写操作（创建/修改/移动卡片）如果绕过 `UploadTask`，Memo Studio 不会出现该任务；这不是插件漏读。此时必须停下说明，或先接上 `UploadTask` 再写，不能事后把“没显示”解释成 Studio 故障。**
 
+## 只读盘点进度
+
+只读 GET 不写卡时，不要让每张卡 GET 都变成一个进度 tick。用任务级 scan 记录：
+
+```python
+from scan_progress import ScanProgress
+
+with ScanProgress("inventory-2026", total=36, current="开始", unit="chapters") as scan:
+    for i, chapter in enumerate(chapters, 1):
+        read_cards(chapter)
+        scan.update(i, chapter.name)
+```
+
+写入：
+
+```text
+~/.memo-cardest/progress/v1/scan/<hash>.json
+```
+
+字段：
+
+```text
+kind=scan / phase=scan
+session_id / task_id / unit=chapters|cards
+total / done / current / started_at / updated_at / pid
+```
+
+显示：
+
+```text
+只读盘点 8/36 章
+约 2 分钟
+```
+
+规则：
+
+- 不是上传，不能显示“已上传”；
+- 不放进 API 上传任务列表；
+- 每章/每 N 张更新，不为每个 GET 打点；
+- 短扫描（<5 秒）不显示；
+- 完成后可保留 3 秒完成态；
+- 30 秒无更新视为过期。
+
 ## 媒体阶段进度
 
 图片/音频上传不属于卡片 journal，不能塞进 `UploadTask` 的 verify 计数。需要显示媒体阶段时，使用：

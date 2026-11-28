@@ -2,10 +2,10 @@
 name: memo-cardest
 description: 墨卡大师 Memo-Cardest，把学习材料拆成墨墨记忆卡（Markji），设计题型与正文，经官方 API、TXT 文件或 TXT 加官网 APKG 中转（图片、音频）交付；也处理改卡、牌组、批量删除（DELETE 章）及表格、OCR、卡跳跳、Anki 支线路由。开工先做启动同步。用户说墨卡大师、Memo-Cardest、Memo_Card_Maker、墨墨制卡、墨记制卡，或要求连接墨墨 API、修改牌组卡片时使用。不用于墨墨背单词；仅 OCR 或文档转换使用 memo-mineruocr。
 metadata:
-  version: "2.5.0"
+  version: "2.6.0"
 ---
 
-# 墨卡大师 Memo-Cardest v2.5.0
+# 墨卡大师 Memo-Cardest v2.6.0
 
 **适用于任何墨墨记忆卡写卡、改卡、牌组操作或 API 连接请求**——用户没提技能名也算。开工第一件事是 S0，先同步再动卡片。
 

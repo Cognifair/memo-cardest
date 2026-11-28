@@ -2,6 +2,15 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.6.0 — 2026-11-26
+
+影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, scripts/scan_progress.py, scripts/test_scan_progress.py)
+
+### 新增
+
+- 只读盘点进度：scan_progress.py 写 v1/scan，任务级显示章/卡进度，不把每个 GET 当进度。
+- 与 media、card upload 分开；不进入 API 上传任务列表。
+
 ## v2.5.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, scripts/media_progress.py, scripts/test_media_progress.py)
