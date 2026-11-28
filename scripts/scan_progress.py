@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -37,7 +38,20 @@ def scan_dir() -> Path:
 def _atomic_write(path: Path, payload: dict) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, path)
+    # Windows can transiently reject os.replace while the island is reading.
+    last = None
+    for attempt in range(8):
+        try:
+            os.replace(tmp, path)
+            return
+        except PermissionError as error:
+            last = error
+            time.sleep(0.02 * (attempt + 1))
+    try:
+        tmp.unlink(missing_ok=True)
+    except OSError:
+        pass
+    raise last
 
 
 class ScanProgress:

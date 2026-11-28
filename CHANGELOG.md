@@ -2,6 +2,14 @@
 
 遵循语义化版本：修 bug → patch，新增能力 → minor，改变契约 → major。每个版本的说明同时用于 Git tag 与 GitHub Release。
 
+## v2.6.1 — 2026-11-26
+
+影响面：memo-cardest(media_progress.py, scan_progress.py, CHANGELOG.md, version.json)
+
+### 修复
+
+- Windows 上 os.replace 遇到瞬时占用时重试，避免媒体/盘点进度写入中途 PermissionError。
+
 ## v2.6.0 — 2026-11-26
 
 影响面：memo-cardest(SKILL.md, README.md, CHANGELOG.md, version.json, agents/openai.yaml, references/upload-progress.md, scripts/scan_progress.py, scripts/test_scan_progress.py)
